@@ -1,0 +1,134 @@
+<section class="stats-page">
+
+  <!-- Cargando -->
+  <div class="stats-loading" *ngIf="pageState.loading">
+    <span class="spinner">⚽</span>
+    <p>Cargando estadísticas...</p>
+  </div>
+
+  <!-- Error -->
+  <div class="stats-error" *ngIf="!pageState.loading && pageState.errorMessage">
+    <span class="error-icon">⚠️</span>
+    <p>{{ pageState.errorMessage }}</p>
+  </div>
+
+  <!-- Sin datos: el mundial no terminó -->
+  <div class="stats-empty" *ngIf="!pageState.loading && !pageState.errorMessage && pageState.showNoDataState">
+    <span class="empty-icon">🏟️</span>
+    <h3>Estadísticas no disponibles</h3>
+    <p>Las estadísticas y premios estarán disponibles una vez que se dispute la final del mundial.</p>
+  </div>
+
+  <!-- Datos disponibles -->
+  <div class="stats-content" *ngIf="!pageState.loading && !pageState.errorMessage && !pageState.showNoDataState">
+
+    <!-- Resumen del torneo -->
+    <section class="stats-section">
+      <h2 class="section-title">📊 Resumen del Torneo</h2>
+      <div class="stats-grid">
+        <article class="stat-card">
+          <span class="stat-icon">🎯</span>
+          <span class="stat-value">{{ pageState.totalMatches }}</span>
+          <span class="stat-label">Partidos jugados</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-icon">⚽</span>
+          <span class="stat-value">{{ pageState.totalGoals }}</span>
+          <span class="stat-label">Goles totales</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-icon">📈</span>
+          <span class="stat-value">{{ pageState.avgGoalsPerMatch | number:'1.1-2' }}</span>
+          <span class="stat-label">Promedio por partido</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-icon">🟨</span>
+          <span class="stat-value">{{ pageState.totalYellowCards }}</span>
+          <span class="stat-label">Tarjetas amarillas</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-icon">🟥</span>
+          <span class="stat-value">{{ pageState.totalRedCards }}</span>
+          <span class="stat-label">Tarjetas rojas</span>
+        </article>
+      </div>
+    </section>
+
+    <!-- Podio -->
+    <section class="stats-section" *ngIf="pageState.podium.length > 0">
+      <h2 class="section-title">🏆 Podio Final</h2>
+      <div class="podium-list">
+        <article class="podium-item" *ngFor="let item of pageState.podium">
+          <span class="podium-medal">{{ item.medal }}</span>
+          <div class="podium-info">
+            <span class="podium-place">{{ item.placeLabel }}</span>
+            <span class="podium-team">{{ item.teamName }}</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Top Goleadores -->
+    <section class="stats-section" *ngIf="pageState.topScorers.length > 0">
+      <h2 class="section-title">👟 Top Goleadores</h2>
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Jugador</th>
+            <th>Equipo</th>
+            <th>Goles</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let scorer of pageState.topScorers">
+            <td class="rank">{{ scorer.rank }}</td>
+            <td class="player-name">{{ scorer.playerName }}</td>
+            <td class="team-name">{{ scorer.teamName }}</td>
+            <td class="value">{{ scorer.value }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Top Asistentes -->
+    <section class="stats-section" *ngIf="pageState.topAssists.length > 0">
+      <h2 class="section-title">🎯 Top Asistentes</h2>
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Jugador</th>
+            <th>Equipo</th>
+            <th>Asistencias</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let assist of pageState.topAssists">
+            <td class="rank">{{ assist.rank }}</td>
+            <td class="player-name">{{ assist.playerName }}</td>
+            <td class="team-name">{{ assist.teamName }}</td>
+            <td class="value">{{ assist.value }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Premios Individuales -->
+    <section class="stats-section" *ngIf="pageState.awards.length > 0">
+      <h2 class="section-title">🏅 Premios Individuales</h2>
+      <div class="awards-grid">
+        <article class="award-card" *ngFor="let award of pageState.awards">
+          <span class="award-icon">{{ award.icon }}</span>
+          <div class="award-info">
+            <span class="award-title">{{ award.title }}</span>
+            <span class="award-winner">{{ award.winnerName }}</span>
+            <span class="award-team">{{ award.teamName }}</span>
+            <span class="award-reason">{{ award.reason }}</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+  </div>
+</section>

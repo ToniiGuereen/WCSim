@@ -1,0 +1,87 @@
+<section class="card">
+  <div class="card-header">
+    <span class="card-title">Estado del equipo</span>
+  </div>
+
+  <div *ngIf="vm.loading">Cargando...</div>
+  <div *ngIf="vm.errorMessage">{{ vm.errorMessage }}</div>
+
+  <div *ngIf="!vm.loading && !vm.errorMessage">
+    <div *ngIf="vm.data && !vm.showNoFinalState; else noMatch">
+
+      <!-- BARRA SUPERIOR -->
+      <div>
+        <h2>Minuto: {{ vm.data.minute }} | Turno: {{ vm.data.turn }}</h2>
+        <h3>Marcador: {{ vm.data.score }}</h3>
+      </div>
+
+      <hr />
+
+      <!-- EQUIPOS -->
+      <div class="teams-container">
+
+        <!-- MI EQUIPO -->
+        <div class="team-panel">
+          <h2>{{ vm.data.team.flag }} {{ vm.data.team.name }}</h2>
+          <p>{{ vm.data.team.formation }} - {{ vm.data.team.strategy }}</p>
+          <p>DT: {{ vm.data.team.coachName }} ({{ vm.data.team.coachProfile }})</p>
+
+          <h4>Tácticas</h4>
+          <p>Ataque: {{ vm.data.team.tacticalBreakdown.effectiveTeamLine.attack }}</p>
+          <p>Defensa: {{ vm.data.team.tacticalBreakdown.effectiveTeamLine.defense }}</p>
+          <p>Medio: {{ vm.data.team.tacticalBreakdown.effectiveTeamLine.midfield }}</p>
+
+          <h4>Titulares</h4>
+          <ul>
+            <li *ngFor="let p of vm.data.team.onField">
+              {{ p.shirtNumber }} - {{ p.name }} ({{ p.position }}) - Energía: {{ p.energyLabel }}
+            </li>
+          </ul>
+
+          <h4>Suplentes</h4>
+          <ul>
+            <li *ngFor="let p of vm.data.team.bench">
+              {{ p.shirtNumber }} - {{ p.name }} ({{ p.position }}) - Energía: {{ p.energyLabel }}
+            </li>
+          </ul>
+
+          <p>Cambios: {{ vm.data.team.substitutionsUsed }}/{{ vm.data.team.maxSubstitutions }}</p>
+        </div>
+
+        <!-- RIVAL -->
+        <div class="team-panel">
+          <h2>{{ vm.data.opponent.flag }} {{ vm.data.opponent.name }}</h2>
+          <p>{{ vm.data.opponent.formation }} - {{ vm.data.opponent.strategy }}</p>
+          <p>DT: {{ vm.data.opponent.coachName }} ({{ vm.data.opponent.coachProfile }})</p>
+
+          <h4>Tácticas</h4>
+          <p>Ataque: {{ vm.data.opponent.tacticalBreakdown.effectiveTeamLine.attack }}</p>
+          <p>Defensa: {{ vm.data.opponent.tacticalBreakdown.effectiveTeamLine.defense }}</p>
+          <p>Medio: {{ vm.data.opponent.tacticalBreakdown.effectiveTeamLine.midfield }}</p>
+
+          <h4>Titulares</h4>
+          <ul>
+            <li *ngFor="let p of vm.data.opponent.onField">
+              {{ p.shirtNumber }} - {{ p.name }} ({{ p.position }}) - Energía: {{ p.energyLabel }}
+            </li>
+          </ul>
+
+          <h4>Suplentes</h4>
+          <ul>
+            <li *ngFor="let p of vm.data.opponent.bench">
+              {{ p.shirtNumber }} - {{ p.name }} ({{ p.position }}) - Energía: {{ p.energyLabel }}
+            </li>
+          </ul>
+
+          <p>Cambios: {{ vm.data.opponent.substitutionsUsed }}/{{ vm.data.opponent.maxSubstitutions }}</p>
+        </div>
+
+      </div>
+    </div>
+
+    <ng-template #noMatch>
+      <p>No hay final activa</p>
+    </ng-template>
+  </div>
+
+</section>

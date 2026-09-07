@@ -1,0 +1,36 @@
+<!-- frontend/world-cup-app/src/app/features/my-team/rivals/rivals.component.html -->
+<section class="card">
+  <div class="card-header">
+    <span class="card-title">Rivales históricos</span>
+  </div>
+
+  <!-- Cargando -->
+  <p *ngIf="vm.loading">Cargando rivales...</p>
+
+  <!-- Error -->
+  <p *ngIf="vm.errorMessage && !vm.loading" style="color: red;">
+    {{ vm.errorMessage }}
+  </p>
+
+  <!-- Sin datos -->
+  <p *ngIf="!vm.loading && !vm.errorMessage && vm.rivals.length === 0">
+    No hay rivales registrados para este equipo.
+  </p>
+
+  <!-- Datos -->
+  <div *ngIf="!vm.loading && vm.rivals.length > 0">
+    <p>Total: {{ vm.totalRivals }}</p>
+
+    <div *ngFor="let rival of vm.rivals"
+         style="border: 1px solid #ccc; margin: 8px 0; padding: 8px; border-radius: 6px;">
+      <p><strong>{{ rival.flag }} {{ rival.name }}</strong></p>
+      <p>Confederación: {{ rival.confederation }}</p>
+      <p>Rating overall: {{ rival.overallRating }}</p>
+      <p>Entrenador: {{ rival.coachName }}</p>
+      <p>Capitán: {{ rival.captainName }}</p>
+      <p>Formación: {{ rival.formation }}</p>
+      <p>Estrategia: {{ rival.strategyLabel }}</p>
+    </div>
+  </div>
+
+</section>

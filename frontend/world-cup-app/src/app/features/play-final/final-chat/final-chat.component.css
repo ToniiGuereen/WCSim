@@ -1,0 +1,343 @@
+.score-team-flag {
+  font-size: 13px;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.score-teams-matchup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.score-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.score-vs {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.tactical-list {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.tactical-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tactical-item-label {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.tactical-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.tactical-pill-neutral {
+  background: rgba(120, 132, 164, 0.22);
+  border-color: rgba(136, 151, 189, 0.36);
+  color: #d3ddf5;
+}
+
+.tactical-pill-info {
+  background: rgba(103, 171, 236, 0.22);
+  border-color: rgba(140, 196, 255, 0.35);
+  color: #8cc4ff;
+}
+
+.tactical-pill-success {
+  background: rgba(84, 201, 114, 0.2);
+  border-color: rgba(143, 227, 168, 0.32);
+  color: #8fe3a8;
+}
+
+.tactical-pill-warning {
+  background: rgba(222, 176, 95, 0.22);
+  border-color: rgba(241, 197, 117, 0.34);
+  color: #ffd89c;
+}
+
+.tactical-pill-danger {
+  background: rgba(214, 78, 78, 0.26);
+  border-color: rgba(255, 127, 117, 0.35);
+  color: #ff9d9d;
+}
+
+.quick-options-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.quick-option-btn {
+  width: auto;
+  border-radius: 20px;
+  border-width: 1px;
+  padding: 10px 16px;
+  min-height: 38px;
+  font-weight: 700;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.quick-option-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.quick-option-btn-primary:hover:not(:disabled) {
+  background: rgba(0, 128, 0, 0.18);
+  border-color: rgba(255, 215, 0, 0.35);
+  color: #d4e9ff;
+}
+
+.quick-option-btn-accent {
+  background: rgba(118, 141, 226, 0.18);
+  border-color: rgba(118, 141, 226, 0.38);
+  color: #c8d5ff;
+}
+
+.quick-option-btn-accent:hover:not(:disabled) {
+  background: rgba(118, 141, 226, 0.3);
+  border-color: rgba(136, 162, 255, 0.56);
+  color: #e0e7ff;
+}
+
+.quick-option-btn-danger {
+  background: rgba(210, 88, 88, 0.14);
+  border-color: rgba(210, 88, 88, 0.42);
+  color: #ff9d9d;
+}
+
+.quick-option-btn-danger:hover:not(:disabled) {
+  background: rgba(210, 88, 88, 0.26);
+  border-color: rgba(240, 110, 110, 0.64);
+  color: #ffd2d2;
+}
+
+.messages-container {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.message {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(120, 132, 164, 0.14);
+  border: 1px solid rgba(136, 151, 189, 0.24);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.action-message {
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--text-primary);
+  opacity: 0.9;
+}
+
+.error-message {
+  margin-top: 12px;
+  color: #ff9d9d;
+  font-weight: 600;
+}
+
+.final-chat-layout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.final-chat-left {
+  flex: 2;
+}
+
+.final-chat-right {
+  flex: 1;
+}
+
+.match-summary-card {
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(120, 132, 164, 0.14);
+  border: 1px solid rgba(136, 151, 189, 0.24);
+}
+
+.summary-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+
+.summary-score {
+  margin-bottom: 14px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(136, 151, 189, 0.16);
+  font-size: 12px;
+}
+
+.summary-item:last-child {
+  border-bottom: none;
+}
+
+.summary-section-title {
+  margin: 16px 0 8px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(136, 151, 189, 0.16);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.summary-section-title:first-of-type {
+  margin-top: 10px;
+  padding-top: 0;
+  border-top: none;
+}
+
+.chat-input-row {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.chat-input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(136, 151, 189, 0.24);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  opacity: 0.9;
+}
+
+.final-result {
+  margin-top: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffd700;
+}
+
+.tactic-section {
+  color: black;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(136, 151, 189, 0.16);
+}
+
+.tactic-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(136, 151, 189, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.tactic-select option {
+  background-color: #252b47;
+  color: #ffffff;
+}
+
+.tactic-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.error-action-btn {
+  margin-left: 12px;
+  margin-top: 8px;
+  padding: 6px 12px;
+}
+
+.chat-action-box {
+  display: flex;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.chat-action-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 40, 85, 0.25);
+  border-radius: 20px;
+  font-size: 14px;
+}
+
+.chat-action-input:focus {
+  outline: none;
+  border-color: #00843d;
+  box-shadow: 0 0 0 3px rgba(0, 132, 61, 0.12);
+}
+
+.chat-action-button {
+  border: none;
+  border-radius: 20px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  background: #006B3F;
+  color: white;
+}
+
+.chat-action-button:disabled,
+.chat-action-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .final-chat-layout {
+    flex-direction: column;
+  }
+
+  .final-chat-left,
+  .final-chat-right {
+    width: 100%;
+  }
+}

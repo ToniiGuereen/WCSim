@@ -1,0 +1,79 @@
+/* Contenedor principal alineado al resto del proyecto */
+/* Contenedor general de la página */
+.fase-grupos-container {
+  padding: 24px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Grilla para ordenar los grupos de forma prolija */
+.grupos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(365px, 1fr));
+  gap: 24px;
+}
+
+.panel-card {
+  background-color: #1a1d2e; 
+  border: 1px solid #2a2f42; 
+  border-radius: 12px;       
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #2a2f42; 
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #ffffff; 
+}
+
+
+.panel-body {
+  padding: 20px;
+}
+
+
+.tabla-posiciones {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+
+.tabla-posiciones th {
+  color: #626b80; 
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 8px 6px;
+  border-bottom: 1px solid #2a2f42;
+  text-align: center;
+}
+
+
+.tabla-posiciones th:nth-child(2),
+.tabla-posiciones td:nth-child(2) {
+  text-align: left; 
+}
+
+
+.tabla-posiciones td {
+  padding: 12px 6px;
+  color: #e2e8f0; 
+  font-size: 0.9rem;
+  border-bottom: 1px solid #232736;
+  text-align: center;
+}
+
+.team-code {
+  color: #626b80;
+  font-size: 0.8rem;
+}
+
+.team-points {
+  font-weight: 600;
+}
+

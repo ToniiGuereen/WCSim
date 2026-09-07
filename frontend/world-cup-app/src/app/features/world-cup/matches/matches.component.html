@@ -1,0 +1,89 @@
+<section class="card">
+  <div class="card-header">
+    <span class="card-title">Detalles de Partidos</span>
+  </div>
+
+  <div class="empty-state" *ngIf="pageState.loading">
+    <div class="empty-icon">⏳</div>
+    <p>Cargando partidos...</p>
+  </div>
+
+  <div class="empty-state" *ngIf="!pageState.loading && pageState.errorMessage">
+    <div class="empty-icon">⚠️</div>
+    <p>{{ pageState.errorMessage }}</p>
+  </div>
+
+  <div class="empty-state" *ngIf="!pageState.loading && !pageState.errorMessage && pageState.showNoSimulationState">
+    <div class="empty-icon">🏟️</div>
+    <p>Todavía no hay un mundial simulado. Simulá primero para ver los partidos.</p>
+  </div>
+
+  <ng-container *ngIf="!pageState.loading && !pageState.errorMessage && !pageState.showNoSimulationState">
+    <div class="grid-3">
+      <div class="stat-box">
+        <div class="stat-value">{{ pageState.totalMatches }}</div>
+        <div class="stat-label">Partidos totales</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">{{ pageState.playedMatches }}</div>
+        <div class="stat-label">Jugados</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">{{ pageState.pendingMatches }}</div>
+        <div class="stat-label">Pendientes</div>
+      </div>
+    </div>
+
+    <nav class="stage-tabs mt-16">
+      <button
+        type="button"
+        class="stage-tab"
+        *ngFor="let stageFilter of pageState.stages"
+        [class.active]="stageFilter.stage === pageState.selectedStage"
+        (click)="onStageChange(stageFilter.stage)">
+        {{ stageFilter.label }} ({{ stageFilter.count }})
+      </button>
+    </nav>
+
+    <div class="empty-state" *ngIf="pageState.matches.length === 0">
+      <div class="empty-icon">📋</div>
+      <p>No hay partidos para mostrar en esta fase.</p>
+    </div>
+
+    <ul class="match-grid" *ngIf="pageState.matches.length > 0">
+      <li *ngFor="let match of pageState.matches">
+        <article class="match-card">
+          <header class="match-card-top">
+            <span class="match-code-lbl">
+              {{ match.matchCode }}<ng-container *ngIf="match.groupName"> · {{ match.groupName }}</ng-container>
+            </span>
+            <span class="match-res-lbl">{{ match.resolutionLabel }}</span>
+          </header>
+
+          <div class="match-teams-row">
+            <span class="match-team-info">
+              <span class="match-flag">{{ match.homeFlag }}</span>{{ match.homeTeamName }}
+            </span>
+            <span class="match-score-big">{{ match.scoreLabel }}</span>
+            <span class="match-team-info">
+              <span class="match-flag">{{ match.awayFlag }}</span>{{ match.awayTeamName }}
+            </span>
+          </div>
+
+          <p class="match-pen" *ngIf="match.penaltyLabel">{{ match.penaltyLabel }}</p>
+
+          <footer class="match-card-foot">
+            <p *ngIf="match.winnerTeamName">
+              Ganador: <span class="match-flag">{{ match.winnerFlag }}</span>{{ match.winnerTeamName }}
+            </p>
+            <p *ngIf="match.playerOfMatchName">
+              Jugador del partido: {{ match.playerOfMatchName }}
+            </p>
+            <p *ngIf="match.goalsSummary">Goles: {{ match.goalsSummary }}</p>
+            <p *ngIf="match.cardsSummary">Tarjetas: {{ match.cardsSummary }}</p>
+          </footer>
+        </article>
+      </li>
+    </ul>
+  </ng-container>
+</section>

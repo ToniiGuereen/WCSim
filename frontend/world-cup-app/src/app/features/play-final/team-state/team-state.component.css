@@ -1,0 +1,8 @@
+.teams-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.team-panel {
+  width: 48%;
+}
