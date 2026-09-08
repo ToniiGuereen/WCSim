@@ -1,78 +1,53 @@
 import { Injectable } from '@nestjs/common';
+import { AdminService } from '../../admin/admin.service';
+import { WorldCupApiService } from '../../basic/world-cup-api.service';
 
 @Injectable()
 export class PlayFinalService {
+  /** Drives the final-match lifecycle against the World Cup API using the active admin team/lang context. */
+  constructor(
+    private readonly worldCupApiService: WorldCupApiService,
+    private readonly adminService: AdminService,
+  ) {}
 
   async startFinal() {
-    const response = await fetch('http://localhost:5101/worldCup/match/start-final', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        lang: 'es',
-      }),
+    const teamId = this.adminService.getCurrentTeamId();
+    const lang = this.adminService.getCurrentLang();
+
+    return this.worldCupApiService.post('/match/start-final', {
+      teamId,
+      lang,
     });
-
-    const data = await response.json();
-
-    return data;
   }
 
   async play(selectedOption: number) {
-    const response = await fetch('http://localhost:5101/worldCup/match/play', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        selectedOption,
-        lang: 'es',
-      }),
+    const lang = this.adminService.getCurrentLang();
+
+    return this.worldCupApiService.post('/match/play', {
+      selectedOption,
+      lang,
     });
-
-    const data = await response.json();
-
-    return data;
   }
 
   async changeStrategy(strategy: string) {
-    const response = await fetch(
-      'http://localhost:5101/worldCup/match/select-strategy',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          teamId: 'aus',
-          strategy,
-          lang: 'es',
-        }),
-      },
-    );
+    const teamId = this.adminService.getCurrentTeamId();
+    const lang = this.adminService.getCurrentLang();
 
-    const data = await response.json();
-    return data;
+    return this.worldCupApiService.post('/match/select-strategy', {
+      teamId,
+      strategy,
+      lang,
+    });
   }
 
   async changeFormation(formation: string) {
-    const response = await fetch(
-      'http://localhost:5101/worldCup/match/select-formation',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          teamId: 'aus',
-          formation,
-          lang: 'es',
-        }),
-      },
-    );
+    const teamId = this.adminService.getCurrentTeamId();
+    const lang = this.adminService.getCurrentLang();
 
-    const data = await response.json();
-    return data;
+    return this.worldCupApiService.post('/match/select-formation', {
+      teamId,
+      formation,
+      lang,
+    });
   }
 }

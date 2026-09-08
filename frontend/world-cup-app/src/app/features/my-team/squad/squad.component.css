@@ -58,7 +58,8 @@
 .table-wrap thead th {
   position: sticky;
   top: 0;
-  background: var(--bg-card);
+  background: rgba(10, 19, 36, 0.95);
+  backdrop-filter: blur(8px);
   z-index: 2;
 }
 

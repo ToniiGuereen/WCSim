@@ -203,12 +203,15 @@ export class FinalChatPageComponent implements OnInit {
   }
 
   translatePossession(possession: string): string {
-    const possessions: Record<string, string> = {
-      USER: 'Australia',
-      OPPONENT: 'Rival',
-    };
+    if (possession === 'USER') {
+      return this.data?.teamName ?? 'Mi equipo';
+    }
 
-    return possessions[possession] || possession;
+    if (possession === 'OPPONENT') {
+      return this.data?.opponentName ?? 'Rival';
+    }
+
+    return possession;
   }
 
   translateStrategy(strategy: string): string {

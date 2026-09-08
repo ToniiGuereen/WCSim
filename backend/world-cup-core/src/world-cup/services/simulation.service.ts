@@ -154,8 +154,8 @@ export class SimulationService extends AbstractBaseService {
     );
 
     const team = Array.isArray(catalog) ? (catalog[0] as TeamCatalogApiItem | undefined) : undefined;
-    const strategy = (stats?.current_strategy).trim().toUpperCase();
-    const formation = (stats?.current_formation).trim();
+    const strategy = (stats?.current_strategy ?? '').trim().toUpperCase();
+    const formation = (stats?.current_formation ?? '').trim();
 
     return {
       teamId: normalizedTeamId,
