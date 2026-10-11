@@ -1,6 +1,0 @@
-export enum MatchFieldZone {
-  DEFENSE_THIRD = 'DEFENSE_THIRD',
-  MIDFIELD = 'MIDFIELD',
-  ATTACK_THIRD = 'ATTACK_THIRD',
-  BOX = 'BOX',
-}

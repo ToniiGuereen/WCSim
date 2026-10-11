@@ -1,218 +1,227 @@
-# Trabajo Práctico Integrador — Programación III UTN
-## Mundial 2026 — Full Stack Web App
+﻿# ⚽ Mundial 2026 — Simulador Interactivo
+
+**Aplicación web Full Stack** para seguimiento, simulación y análisis del Mundial de Fútbol 2026. Construida con **Next.js 14 App Router**, TypeScript y un sistema de diseño premium con glassmorphism y paletas de color dinámicas por selección.
 
 ---
 
-## Contexto
+## ¿Qué es este proyecto?
 
-En este trabajo práctico van a construir una aplicación web full stack con temática del **Mundial de Fútbol 2026**. Cada grupo de **10 integrantes** tendrá asignada una **selección de fútbol por sorteo**. El look & feel de toda la aplicación debe representar a esa selección: sus **colores oficiales** y su **escudo**.
+Un simulador web completo del Mundial FIFA 2026 que permite:
 
-La aplicación consume datos de la **WorldCupAPI** — una API ya desarrollada por la cátedra que **no se puede modificar**. Su backend NestJS actúa como intermediario (BFF — Backend For Frontend): recibe los pedidos del frontend Angular, llama a la WorldCupAPI, transforma los datos si es necesario, y responde al frontend.
+- **Gestionar una selección** — plantel, cuerpo técnico, formación táctica, historial y rivales.
+- **Simular el torneo** — motor de simulación que procesa grupos y fases eliminatorias hasta definir a los finalistas.
+- **Jugar la Gran Final** — simulador interactivo por turnos donde el usuario elige jugadas tácticas en tiempo real.
+- **Consultar estadísticas** — goleadores, asistencias, premios individuales, camino del equipo partido a partido.
+- **Historial de Mundiales** — archivo de ediciones anteriores de la Copa del Mundo FIFA.
+- **Eventos en vivo y estado del equipo** durante la Final.
+
+---
+
+## Arquitectura
+
+El proyecto sigue una arquitectura **monorepo Next.js** donde el frontend y la capa de API proxy conviven en la misma aplicación:
+
+```
+┌─────────────────────────────────────┐
+│       Browser (Next.js Client)      │
+│  React Components + AppContext      │
+└──────────────┬──────────────────────┘
+               │ fetch /api/...
+┌──────────────▼──────────────────────┐
+│     Next.js Route Handlers          │
+│  app/api/** (proxy + fallback)      │
+└──────────────┬──────────────────────┘
+               │ HTTP proxy
+┌──────────────▼──────────────────────┐
+│   Backend BFF — NestJS (port 4101)  │
+│   /worldCupCore/**                  │
+└──────────────┬──────────────────────┘
+               │ HTTP
+┌──────────────▼──────────────────────┐
+│   WorldCupAPI (port 5101, solo      │
+│   lectura, datos del torneo)        │
+└─────────────────────────────────────┘
+```
+
+### Flujo de datos
+
+1. Los **componentes React** llaman a `src/services/api.ts` — cliente HTTP centralizado que apunta a `/api/*`.
+2. Los **Route Handlers** en `src/app/api/**` proxean cada pedido al **BFF NestJS** con un timeout de 2.5 s.
+3. Si el BFF no responde, los Route Handlers retornan **datos mock** locales (fallback) para que el frontend funcione sin backend.
+4. El **BFF NestJS** es el único que habla con la **WorldCupAPI** — el frontend nunca la contacta directamente.
 
 ---
 
 ## Stack técnico
 
-| Capa | Tecnología | Puerto | URL base |
-|------|-----------|--------|----------|
-| Frontend | Angular (WorldCupApp) | `:3101` | `http://localhost:3101` |
-| Backend BFF | NestJS (WorldCupCore) | `:4101` | `http://localhost:4101/worldCupCore` |
-| API de datos | WorldCupAPI (solo lectura, cátedra) | `:5101` | `http://localhost:5101/worldCup` |
+| Capa | Tecnología | Puerto |
+|------|-----------|--------|
+| Frontend + API Proxy | Next.js 14 (App Router) | `:3101` |
+| BFF Backend | NestJS | `:4101` |
+| API de datos | WorldCupAPI (solo lectura) | `:5101` |
 
-**Swagger:**
-- WorldCupAPI: `http://localhost:5101/worldCup/api`
-- WorldCupCore: `http://localhost:4101/worldCupCore/api`
+**Dependencias del frontend:**
 
----
-
-## Integrantes del grupo
-
-### Tech Lead
-
-Debido a la gran cantidad de alumnos y grupos del curso, la cátedra utilizará al Tech Lead como principal punto de contacto para realizar seguimientos y consultas sobre el estado del proyecto.
-
-Uno de los integrantes del equipo asumirá este rol y será responsable de coordinar técnicamente el trabajo del grupo, organizar las integraciones entre funcionalidades y facilitar la comunicación con la cátedra.
-
-Entre sus responsabilidades se incluyen:
-
-- Coordinar la división de tareas y el avance general del TP.
-- Supervisar la integración entre las distintas funcionalidades.
-- Validar que el proyecto pueda ejecutarse correctamente de punta a punta.
-- Centralizar consultas técnicas y comunicación con la cátedra.
-- Ayudar a destrabar problemas técnicos dentro del equipo.
-
-**Nombre del Tech Lead: Patricio Moretti**
-
-### Integrantes por funcionalidad
-
-> Completar con los nombres reales y la funcionalidad que va a realizar cada integrante.
-
-| # | Integrante | Funcionalidad | Sección |
-|---|-----------|---------------|---------|
-| 1 | Joaquin D'Andrea | Cuerpo Técnico y Estrategia | Mi Equipo |
-| 2 | Ruth Mane Petit Frere | Rivales Históricos | Mi Equipo |
-| 3 | Agostina Morales | Fase de Grupos | El Mundial |
-| 4 | Juan Carlos Quinteros | Camino del Equipo | El Mundial |
-| 5 | Francisco Cuce | Detalles de Partidos | El Mundial |
-| 6 | Antonio Guerendiain | Estadísticas y Premios | El Mundial |
-| 7 | Leonel Pereyra | Historial de Mundiales | El Mundial |
-| 8 | Jezabel Di Franco | Eventos en Vivo | La Final |
-| 9 | Patricio Moretti | Estado del Equipo en la Final | La Final |
-| 10 | Thiago Borro | **Jugar la Final** *(Responsabilidad Grupal)* | La Final |
-
-> **Jugar la Final** es obligatoria para la aprobación del TP y responsabilidad de todo el grupo. Debe poder jugarse de principio a fin sin errores. De ella dependen: Eventos en Vivo, Estado del Equipo, Estadísticas y Premios e Historial de Mundiales.
+| Paquete | Uso |
+|---------|-----|
+| `next` 14 | Framework React con App Router |
+| `react` / `react-dom` 18 | Renderizado UI |
+| `lucide-react` | Iconografía SVG |
+| `typescript` 5 | Tipado estático |
 
 ---
 
-## Documentación
+## Estructura de carpetas
 
-| Documento | Descripción |
-|-----------|-------------|
-| [Enunciado v5](./docs/TP_Mundial2026_Enunciado_v5_Simplificado.pdf) | Descripción completa del TP: funcionalidades a desarrollar, requerimientos de pantalla por feature, endpoints de WorldCupAPI a consumir y criterios de evaluación. |
-| [Guía Técnica v5](./docs/TP_Mundial2026_Guía_Técnica_v5.pdf) | Arquitectura del proyecto, listado completo de endpoints disponibles de la WorldCupAPI, notas de implementación y diagramas de flujo de la feature Plantel como referencia. |
-
----
-
-## Índice
-
-- [Contexto](#contexto)
-- [Stack técnico](#stack-técnico)
-- [Integrantes del grupo](#integrantes-del-grupo)
-- [Documentación](#documentación)
-- [Requerimientos generales](#requerimientos-generales-de-la-aplicación)
-- [Configuración del .env](#configuración-del-env-del-worldcupcore)
-- [Cómo levantar el proyecto](#cómo-levantar-el-proyecto)
-- [Estructura de proyecto](#estructura-de-proyecto)
-- [Entregables](#entregables)
-
----
-
-## Requerimientos generales de la aplicación
-
-- **Sin login.** La app arranca directo en la pantalla principal.
-- **Menú lateral (sidebar)** con navegación entre todas las funcionalidades.
-- El **encabezado del sidebar** debe mostrar el escudo y los colores de la selección asignada.
-- Cada funcionalidad es una **vista independiente** que se carga en el área de contenido principal.
-- El frontend Angular **nunca llama directamente** a la WorldCupAPI — siempre pasa por el WorldCupCore.
-- Toda la lógica de negocio debe resolverse en el WorldCupCore; el frontend solo adapta la respuesta al modelo de vista.
-- Se debe respetar la arquitectura de los proyectos provista por la cátedra.
-- Se deben respetar el stack técnico y las tecnologías vistas en clase.
-- **Idioma:** el WorldCupCore lee la variable de entorno `APP_LANG=es` y pasa `?lang=es` a cada endpoint de la WorldCupAPI que lo soporte.
-
----
-
-## Configuración del .env del WorldCupCore
-
-```env
-APP_PORT=4101
-APP_BASE_PATH=worldCupCore
-
-WORLD_CUP_API_URL=http://localhost:5101
-WORLD_CUP_API_BASE_PATH=/worldCup
-
-CORS_ALLOWED_ORIGIN=http://localhost:3101
-
-TEAM_ID=aus          # ID del equipo asignado a este grupo
-APP_LANG=es          # Idioma de las respuestas de la WorldCupAPI
+```
+src/
+├── app/
+│   ├── layout.tsx              # Layout raíz: Sidebar, Topbar, Header, AdminModal
+│   ├── page.tsx                # Redirige a /my-team/squad
+│   ├── api/                    # Route Handlers (proxy hacia NestJS + fallback mock)
+│   │   ├── admin/config/
+│   │   ├── my-team/{players,coaching,coaching/strategy,coaching/formation,history,rivals}/
+│   │   ├── world-cup/{groups,journey,simulate,current,matches,stats-awards,history}/
+│   │   └── final-match/{start,play,strategy,formation,team-state,eventos-geniales-api}/
+│   ├── my-team/
+│   │   ├── squad/page.tsx      # Plantel de jugadores
+│   │   ├── coaching/page.tsx   # Cuerpo técnico y estrategia
+│   │   ├── history/page.tsx    # Historia y palmarés del equipo
+│   │   └── rivals/page.tsx     # Rivales históricos
+│   ├── world-cup/
+│   │   ├── groups/page.tsx     # Fase de grupos
+│   │   ├── journey/page.tsx    # Camino del equipo en el torneo
+│   │   ├── simulate/page.tsx   # Motor de simulación del torneo
+│   │   ├── matches/page.tsx    # Detalle de partidos por fase
+│   │   ├── stats/page.tsx      # Estadísticas y premios individuales
+│   │   └── history/page.tsx    # Historial de Copas del Mundo
+│   └── play-final/
+│       ├── chat/page.tsx       # Simulador interactivo de la Gran Final
+│       ├── live/page.tsx       # Eventos en vivo (línea de tiempo)
+│       └── team-state/page.tsx # Estado del equipo en la Final
+├── components/
+│   ├── AppHeader.tsx           # Encabezado global con logo, equipo y controles
+│   ├── Sidebar.tsx             # Navegación lateral con secciones y links activos
+│   ├── Topbar.tsx              # Barra de contexto por ruta
+│   └── AdminModal.tsx          # Modal de configuración de equipo e idioma
+├── context/
+│   └── AppContext.tsx          # Estado global: teamId, lang, paleta CSS dinámica
+├── services/
+│   ├── api.ts                  # Cliente HTTP centralizado (apunta a /api/*)
+│   └── mockData.ts             # Datos de fallback para modo offline
+├── styles/
+│   └── globals.css             # Sistema de diseño: tokens CSS, glassmorphism, layout
+└── types/
+    └── index.ts                # Interfaces y tipos TypeScript del dominio
 ```
 
-Todas las funcionalidades de "Mi Equipo" leen el `TEAM_ID` directamente del `.env` — **no** lo reciben como parámetro del frontend.
+---
+
+## Funcionalidades
+
+### 🏟️ Mi Equipo
+- **Plantel** — nómina de jugadores con posición, dorsal, edad, habilidad, energía y si está en cancha.
+- **Cuerpo Técnico** — perfil del DT, estrategia actual (`EQUILIBRADO`, `OFENSIVO`, `DEFENSIVO`, `CONTRAATAQUE`) y formación (`4-3-3`, `4-4-2`, etc.). Permite cambiarlos en tiempo real.
+- **Historial del Equipo** — títulos, copas del mundo ganadas, participaciones y estadísticas históricas.
+- **Rivales Históricos** — balance de enfrentamientos contra rivales clásicos con rating de rivalidad.
+
+### 🌍 El Mundial
+- **Fase de Grupos** — tablas de posiciones de los 16 grupos del Mundial 2026 con puntos, goles y diferencia.
+- **Camino del Equipo** — cada partido de la selección desde grupos hasta la final, con resultado y rival.
+- **Simular Final** — ejecuta el motor de simulación completo y muestra qué dos equipos llegan a la Final con sus datos tácticos.
+- **Partidos** — resultados detallados por fase: goleadores, tarjetas, figura del partido.
+- **Estadísticas y Premios** — podio, goleadores, asistentes, mejor portero, mejor jugador joven.
+- **Historial de Mundiales** — archivo de todas las ediciones pasadas de la Copa del Mundo.
+
+### ⚡ La Final
+- **Jugar la Final** — simulador interactivo por turnos. El usuario elige entre 4 opciones tácticas (atacar, remate al arco, centro, aguantar) o ingresa texto libre que se mapea a una acción. El partido avanza minuto a minuto con un marcador en vivo, zona del balón y posesión.
+- **Eventos en Vivo** — línea de tiempo con los eventos más relevantes del partido (goles, tarjetas, cambios).
+- **Estado del Equipo** — alineación en cancha con nivel de energía por jugador, cambios disponibles.
+
+---
+
+## Sistema de diseño
+
+La aplicación usa **CSS custom properties** para una paleta dinámica por selección:
+
+- **Modo oscuro** por defecto con fondo `#060c18` y gradientes radiales.
+- **Glassmorphism** en sidebar, header, tarjetas y modales (`backdrop-filter: blur`).
+- **Tipografía**: `Outfit` (headings, números) + `Plus Jakarta Sans` (body text).
+- **Paleta dinámica**: al cambiar de equipo, las variables `--team-primary`, `--team-accent`, etc. se aplican en `document.documentElement` actualizando toda la UI al instante.
+
+---
+
+## Variables de entorno
+
+Crear un archivo `.env.local` en la raíz con:
+
+```env
+# URL base del BFF NestJS (Backend For Frontend)
+NEXT_PUBLIC_CORE_URL=http://localhost:4101/worldCupCore
+
+# Equipo por defecto (código ISO de 3 letras, ej: arg, bra, esp)
+NEXT_PUBLIC_TEAM_ID=arg
+
+# Idioma por defecto para las respuestas de la API
+NEXT_PUBLIC_APP_LANG=es
+
+# Puerto del servidor Next.js
+PORT=3101
+```
 
 ---
 
 ## Cómo levantar el proyecto
 
-Levantar los tres servicios en orden: primero la API de datos, luego el BFF, finalmente el frontend.
+### Modo solo frontend (con datos mock)
 
-### 1. WorldCupAPI (puerto 5101)
+```bash
+npm install
+npm run dev
+```
 
+La aplicación corre en `http://localhost:3101` usando datos mock locales como fallback cuando el backend no está disponible.
+
+### Modo completo (con backend y API de datos)
+
+**1. WorldCupAPI** (datos del torneo, puerto 5101)
 ```bash
 cd world-cup-api
 npm install
 npm start
 ```
 
-Verificar en: `http://localhost:5101/worldCup/api`
-
-### 2. WorldCupCore — BFF NestJS (puerto 4101)
-
+**2. BFF NestJS** (Backend For Frontend, puerto 4101)
 ```bash
 cd backend/world-cup-core
+cp .env.example .env
 npm install
-# Editar el .env: reemplazar TEAM_ID con el ID del equipo asignado al grupo
 npm run start:dev
 ```
 
-Verificar en: `http://localhost:4101/worldCupCore/api`
-
-### 3. WorldCupApp — Frontend Angular (puerto 3101)
-
+**3. Frontend Next.js** (puerto 3101)
 ```bash
-cd frontend/world-cup-app
 npm install
-npm start
+npm run dev
 ```
 
-Verificar en: `http://localhost:3101`
+Acceder en: `http://localhost:3101`
 
 ---
 
-## Estructura de proyecto
+## Scripts disponibles
 
-```
-world-cup-app/               ← App Angular (puerto 3101)
-└── src/app/
-    ├── core/
-    │   ├── constants/
-    │   ├── models/
-    │   └── services/        ← api.service, app-context.service, base-api.service
-    ├── shared/
-    │   ├── admin/
-    │   ├── layout/
-    │   └── sidebar/
-    └── features/
-        ├── my-team/
-        │   ├── squad/               ← Plantel (ejemplo provisto)
-        │   ├── team-history/        ← Historia del Equipo (ejemplo provisto)
-        │   ├── coaching/            ← Cuerpo Técnico y Estrategia
-        │   └── rivals/              ← Rivales Históricos
-        ├── world-cup/
-        │   ├── simulate/            ← Simular el Mundial (ejemplo provisto)
-        │   ├── groups/              ← Fase de Grupos
-        │   ├── journey/             ← Camino del Equipo
-        │   ├── matches/             ← Detalles de Partidos
-        │   ├── stats/               ← Estadísticas y Premios
-        │   └── history/             ← Historial de Mundiales
-        └── play-final/
-            ├── final-chat/          ← Jugar la Final (Responsabilidad Grupal)
-            ├── live-events/         ← Eventos en Vivo
-            └── team-state/         ← Estado del Equipo en la Final
-```
-
-```
-world-cup-core/              ← BFF NestJS (puerto 4101, base /worldCupCore)
-└── src/
-    ├── admin/
-    ├── basic/               ← abstract-base.service, world-cup-api.service, world-cup-feature-api.service
-    ├── teams/               ← controllers y services: squad, team-history, coaching, rivals
-    ├── world-cup/           ← controllers y services: simulate, groups, journey, matches, stats, history
-    └── match/               ← controllers y services: play-final, live-events, team-state
-```
-
-> Cada feature sigue el mismo patrón que los ejemplos provistos: `model/` → `service/` → `component` en el frontend; `controller` → `service` en el backend. Estudiar los ejemplos antes de arrancar.
-
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Servidor de desarrollo en puerto 3101 |
+| `npm run build` | Compilación de producción |
+| `npm run start` | Servidor de producción |
+| `npm run lint` | Análisis estático con ESLint |
 
 ---
 
-## Entregables
+## Licencia
 
-1. **Repositorio público en GitHub** con el código de WorldCupCore y WorldCupApp (fork del repo de la cátedra).
-2. **El proyecto debe compilar y correr sin errores** con `npm install` + `npm start` en cada servicio.
-3. **No modificar las funcionalidades de ejemplo** (Plantel, Historia del Equipo, Simular Final) — son la referencia de arquitectura.
-4. **La WorldCupAPI no debe modificarse.** El proyecto será evaluado usando la WorldCupAPI provista por la cátedra; si no funciona con ella es motivo de desaprobación.
-5. **Jugar la Final debe poder jugarse de principio a fin sin errores.** Es de carácter obligatorio para la aprobación del TP y responsabilidad de todo el equipo.
-6. **Este README** actualizado con los nombres de los integrantes y la funcionalidad asignada a cada uno.
+MIT License © 2026 **Antonio Ignacio Guerendiain**
 
----
-
-*Programación III — UTN — 2026*
+Ver archivo [LICENSE](./LICENSE) para más detalles.

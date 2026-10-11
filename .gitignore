@@ -1,0 +1,78 @@
+﻿# ══════════════════════════════════════════════
+#  .gitignore — Mundial 2026 Simulador
+#  © 2026 Antonio Ignacio Guerendiain
+# ══════════════════════════════════════════════
+
+# ── Dependencias ─────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# ── Build y caché de Next.js ─────────────────
+/.next/
+/out/
+/build/
+/.turbo/
+
+# ── Variables de entorno (NUNCA al repo) ─────
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env*.local
+
+# ── Archivos de sistema operativo ────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ── Logs ─────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+logs/
+
+# ── Testing y cobertura ──────────────────────
+/coverage/
+/.nyc_output/
+/test-results/
+/playwright-report/
+
+# ── IDEs y editores ──────────────────────────
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+*.swo
+
+# ── TypeScript ───────────────────────────────
+*.tsbuildinfo
+next-env.d.ts
+
+# ── Misceláneos ──────────────────────────────
+.vercel
+.netlify
+*.pem
+*.key
+*.cert
+*.p12
+.cache/
+tmp/
+temp/
