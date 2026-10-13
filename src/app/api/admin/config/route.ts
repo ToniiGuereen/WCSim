@@ -1,8 +1,7 @@
-import { NextRequest } from 'next/server';
-import { proxyOrFallback } from '../../proxyHelper';
+import { gateway } from '@/server/gateway';
+import { handle } from '@/server/http';
+import { adminConfig } from '@/server/services/myTeam';
 
-export async function GET(request: NextRequest) {
-  const teamId = process.env.NEXT_PUBLIC_TEAM_ID || 'arg';
-  const lang = process.env.NEXT_PUBLIC_APP_LANG || 'es';
-  return proxyOrFallback('/admin/config', 'GET', undefined, { teamId, lang });
-}
+export const dynamic = 'force-dynamic';
+
+export const GET = handle(() => gateway({ path: '/admin/config', local: adminConfig }));

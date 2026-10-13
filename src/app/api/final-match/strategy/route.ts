@@ -1,15 +1,11 @@
-import { NextRequest } from 'next/server';
-import { proxyOrFallback } from '../../proxyHelper';
-import { INITIAL_FINAL_CHAT } from '@/services/mockData';
+import { gateway } from '@/server/gateway';
+import { handle, readJson } from '@/server/http';
+import { parseStrategy } from '@/server/validation';
+import { changeStrategy } from '@/server/services/finalMatch';
 
-export async function POST(request: NextRequest) {
-  const body = await request.json().catch(() => ({}));
-  const updated = {
-    ...INITIAL_FINAL_CHAT,
-    messageItems: [
-      ...INITIAL_FINAL_CHAT.messageItems,
-      { minute: INITIAL_FINAL_CHAT.minute, text: `Modificación táctica: Estrategia cambiada a ${body.strategy || 'EQUILIBRADO'}`, type: 'tactical' as const }
-    ]
-  };
-  return proxyOrFallback('/final-match/strategy', 'POST', body, updated);
-}
+export const dynamic = 'force-dynamic';
+
+export const POST = handle(async (req) => {
+  const strategy = parseStrategy((await readJson(req)).strategy);
+  return gateway({ path: '/final-match/strategy', method: 'POST', body: { strategy }, local: () => changeStrategy(strategy) });
+});

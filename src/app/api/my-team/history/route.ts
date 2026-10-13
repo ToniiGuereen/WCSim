@@ -1,10 +1,13 @@
-import { NextRequest } from 'next/server';
-import { proxyOrFallback } from '../../proxyHelper';
-import { MOCK_TEAM_HISTORY } from '@/services/mockData';
+import { gateway } from '@/server/gateway';
+import { handle } from '@/server/http';
+import { parseLang, parseTeamId } from '@/server/validation';
+import { getTeamHistory } from '@/server/services/myTeam';
 
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const teamId = searchParams.get('teamId') || 'arg';
-  const lang = searchParams.get('lang') || 'es';
-  return proxyOrFallback(`/my-team/history?teamId=${teamId}&lang=${lang}`, 'GET', undefined, MOCK_TEAM_HISTORY);
-}
+export const dynamic = 'force-dynamic';
+
+export const GET = handle((req) => {
+  const q = req.nextUrl.searchParams;
+  const teamId = parseTeamId(q.get('teamId'));
+  const lang = parseLang(q.get('lang'));
+  return gateway({ path: `/my-team/history?teamId=${teamId}&lang=${lang}`, local: () => getTeamHistory(teamId, lang) });
+});

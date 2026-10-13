@@ -1,8 +1,11 @@
-import { NextRequest } from 'next/server';
-import { proxyOrFallback } from '../../proxyHelper';
-import { MOCK_SIMULATION } from '@/services/mockData';
+import { gateway } from '@/server/gateway';
+import { handle } from '@/server/http';
+import { parseLang } from '@/server/validation';
+import { getSimulation } from '@/server/services/worldCup';
 
-export async function GET(request: NextRequest) {
-  const lang = request.nextUrl.searchParams.get('lang') || 'es';
-  return proxyOrFallback(`/world-cup/current?lang=${lang}`, 'GET', undefined, MOCK_SIMULATION);
-}
+export const dynamic = 'force-dynamic';
+
+export const GET = handle((req) => {
+  const lang = parseLang(req.nextUrl.searchParams.get('lang'));
+  return gateway({ path: `/world-cup/current?lang=${lang}`, local: () => getSimulation(lang) });
+});

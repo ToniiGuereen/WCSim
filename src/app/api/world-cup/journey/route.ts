@@ -1,9 +1,13 @@
-import { NextRequest } from 'next/server';
-import { proxyOrFallback } from '../../proxyHelper';
-import { MOCK_JOURNEY } from '@/services/mockData';
+import { gateway } from '@/server/gateway';
+import { handle } from '@/server/http';
+import { parseLang, parseTeamId } from '@/server/validation';
+import { getJourney } from '@/server/services/worldCup';
 
-export async function GET(request: NextRequest) {
-  const teamId = request.nextUrl.searchParams.get('teamId') || 'arg';
-  const lang = request.nextUrl.searchParams.get('lang') || 'es';
-  return proxyOrFallback(`/world-cup/journey?teamId=${teamId}&lang=${lang}`, 'GET', undefined, MOCK_JOURNEY);
-}
+export const dynamic = 'force-dynamic';
+
+export const GET = handle((req) => {
+  const q = req.nextUrl.searchParams;
+  const teamId = parseTeamId(q.get('teamId'));
+  const lang = parseLang(q.get('lang'));
+  return gateway({ path: `/world-cup/journey?teamId=${teamId}&lang=${lang}`, local: () => getJourney(teamId, lang) });
+});

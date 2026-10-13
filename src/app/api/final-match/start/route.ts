@@ -1,7 +1,7 @@
-import { NextRequest } from 'next/server';
-import { proxyOrFallback } from '../../proxyHelper';
-import { INITIAL_FINAL_CHAT } from '@/services/mockData';
+import { gateway } from '@/server/gateway';
+import { handle } from '@/server/http';
+import { startFinal } from '@/server/services/finalMatch';
 
-export async function POST(request: NextRequest) {
-  return proxyOrFallback('/final-match/start', 'POST', {}, INITIAL_FINAL_CHAT);
-}
+export const dynamic = 'force-dynamic';
+
+export const POST = handle(() => gateway({ path: '/final-match/start', method: 'POST', body: {}, local: startFinal }));

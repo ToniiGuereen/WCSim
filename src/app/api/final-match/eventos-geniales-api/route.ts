@@ -1,7 +1,7 @@
-import { NextRequest } from 'next/server';
-import { proxyOrFallback } from '../../proxyHelper';
-import { MOCK_LIVE_EVENTS } from '@/services/mockData';
+import { gateway } from '@/server/gateway';
+import { handle } from '@/server/http';
+import { getLiveEvents } from '@/server/services/finalMatch';
 
-export async function GET(request: NextRequest) {
-  return proxyOrFallback('/final-match/eventos-geniales-api', 'GET', undefined, MOCK_LIVE_EVENTS);
-}
+export const dynamic = 'force-dynamic';
+
+export const GET = handle(() => gateway({ path: '/final-match/eventos-geniales-api', local: getLiveEvents }));

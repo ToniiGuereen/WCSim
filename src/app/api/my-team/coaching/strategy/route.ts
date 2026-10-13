@@ -1,12 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { proxyOrFallback } from '../../../proxyHelper';
-import { MOCK_COACHING } from '@/services/mockData';
+import { gateway } from '@/server/gateway';
+import { handle, readJson } from '@/server/http';
+import { parseStrategy } from '@/server/validation';
+import { updateStrategy } from '@/server/services/myTeam';
 
-export async function POST(request: NextRequest) {
-  const body = await request.json().catch(() => ({}));
-  const updated = {
-    ...MOCK_COACHING,
-    currentStrategy: body.strategy || MOCK_COACHING.currentStrategy,
-  };
-  return proxyOrFallback('/my-team/coaching/strategy', 'POST', body, updated);
-}
+export const dynamic = 'force-dynamic';
+
+export const POST = handle(async (req) => {
+  const strategy = parseStrategy((await readJson(req)).strategy);
+  return gateway({ path: '/my-team/coaching/strategy', method: 'POST', body: { strategy }, local: () => updateStrategy(strategy) });
+});

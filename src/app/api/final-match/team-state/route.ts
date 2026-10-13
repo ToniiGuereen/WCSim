@@ -1,7 +1,7 @@
-import { NextRequest } from 'next/server';
-import { proxyOrFallback } from '../../proxyHelper';
-import { MOCK_TEAM_STATE } from '@/services/mockData';
+import { gateway } from '@/server/gateway';
+import { handle } from '@/server/http';
+import { getTeamState } from '@/server/services/finalMatch';
 
-export async function GET(request: NextRequest) {
-  return proxyOrFallback('/final-match/team-state', 'GET', undefined, MOCK_TEAM_STATE);
-}
+export const dynamic = 'force-dynamic';
+
+export const GET = handle(() => gateway({ path: '/final-match/team-state', local: getTeamState }));

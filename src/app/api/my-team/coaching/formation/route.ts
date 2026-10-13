@@ -1,12 +1,11 @@
-import { NextRequest } from 'next/server';
-import { proxyOrFallback } from '../../../proxyHelper';
-import { MOCK_COACHING } from '@/services/mockData';
+import { gateway } from '@/server/gateway';
+import { handle, readJson } from '@/server/http';
+import { parseFormation } from '@/server/validation';
+import { updateFormation } from '@/server/services/myTeam';
 
-export async function POST(request: NextRequest) {
-  const body = await request.json().catch(() => ({}));
-  const updated = {
-    ...MOCK_COACHING,
-    currentFormation: body.formation || MOCK_COACHING.currentFormation,
-  };
-  return proxyOrFallback('/my-team/coaching/formation', 'POST', body, updated);
-}
+export const dynamic = 'force-dynamic';
+
+export const POST = handle(async (req) => {
+  const formation = parseFormation((await readJson(req)).formation);
+  return gateway({ path: '/my-team/coaching/formation', method: 'POST', body: { formation }, local: () => updateFormation(formation) });
+});

@@ -1,16 +1,14 @@
-import { NextRequest } from 'next/server';
-import { proxyOrFallback } from '../../proxyHelper';
-import { MOCK_MATCHES } from '@/services/mockData';
+import { gateway } from '@/server/gateway';
+import { handle } from '@/server/http';
+import { parseLang, parseStage } from '@/server/validation';
+import { getMatches } from '@/server/services/worldCup';
 
-export async function GET(request: NextRequest) {
-  const stage = request.nextUrl.searchParams.get('stage');
-  const lang = request.nextUrl.searchParams.get('lang') || 'es';
+export const dynamic = 'force-dynamic';
+
+export const GET = handle((req) => {
+  const q = req.nextUrl.searchParams;
+  const stage = parseStage(q.get('stage'));
+  const lang = parseLang(q.get('lang'));
   const query = stage ? `?stage=${stage}&lang=${lang}` : `?lang=${lang}`;
-  
-  let filtered = MOCK_MATCHES;
-  if (stage && stage !== 'ALL') {
-    filtered = MOCK_MATCHES.filter((m) => m.stage === stage);
-  }
-
-  return proxyOrFallback(`/world-cup/matches${query}`, 'GET', undefined, filtered);
-}
+  return gateway({ path: `/world-cup/matches${query}`, local: () => getMatches(stage, lang) });
+});

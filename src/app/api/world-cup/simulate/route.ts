@@ -1,12 +1,11 @@
-import { NextRequest } from 'next/server';
-import { proxyOrFallback } from '../../proxyHelper';
-import { MOCK_SIMULATION } from '@/services/mockData';
+import { gateway } from '@/server/gateway';
+import { handle } from '@/server/http';
+import { parseLang } from '@/server/validation';
+import { runSimulation } from '@/server/services/worldCup';
 
-export async function POST(request: NextRequest) {
-  const lang = request.nextUrl.searchParams.get('lang') || 'es';
-  const updatedSimulation = {
-    ...MOCK_SIMULATION,
-    status: 'READY_FOR_FINAL' as const,
-  };
-  return proxyOrFallback(`/world-cup/simulate?lang=${lang}`, 'POST', {}, updatedSimulation);
-}
+export const dynamic = 'force-dynamic';
+
+export const POST = handle((req) => {
+  const lang = parseLang(req.nextUrl.searchParams.get('lang'));
+  return gateway({ path: `/world-cup/simulate?lang=${lang}`, method: 'POST', body: {}, heavy: true, local: () => runSimulation(lang) });
+});

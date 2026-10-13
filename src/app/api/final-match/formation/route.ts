@@ -1,15 +1,11 @@
-import { NextRequest } from 'next/server';
-import { proxyOrFallback } from '../../proxyHelper';
-import { INITIAL_FINAL_CHAT } from '@/services/mockData';
+import { gateway } from '@/server/gateway';
+import { handle, readJson } from '@/server/http';
+import { parseFormation } from '@/server/validation';
+import { changeFormation } from '@/server/services/finalMatch';
 
-export async function POST(request: NextRequest) {
-  const body = await request.json().catch(() => ({}));
-  const updated = {
-    ...INITIAL_FINAL_CHAT,
-    messageItems: [
-      ...INITIAL_FINAL_CHAT.messageItems,
-      { minute: INITIAL_FINAL_CHAT.minute, text: `Modificación táctica: Formación ajustada a ${body.formation || '4-3-3'}`, type: 'tactical' as const }
-    ]
-  };
-  return proxyOrFallback('/final-match/formation', 'POST', body, updated);
-}
+export const dynamic = 'force-dynamic';
+
+export const POST = handle(async (req) => {
+  const formation = parseFormation((await readJson(req)).formation);
+  return gateway({ path: '/final-match/formation', method: 'POST', body: { formation }, local: () => changeFormation(formation) });
+});
