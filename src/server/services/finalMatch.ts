@@ -1,12 +1,14 @@
 import { FinalChatState, LiveEventItem, TeamStateData } from '@/types';
+import { CONFIG } from '../config';
 import { conflict } from '../errors';
 import { FinalSession, createSession, play, setFormation, setStrategy, toChatState, toLiveEvents, toMatchRecord, toTeamState } from '../engine/final';
 import { store, teamConfig } from '../engine/state';
 import { clearFinal, recordFinal } from '../engine/tournament';
 import { randomSeed } from '../rng';
-import { finalPairing } from './worldCup';
+import { finalPairing, getSimulation, userInFinal } from './worldCup';
 
 const NOT_SIMULATED = 'Primero debe simularse el Mundial para jugar la Final.';
+const NOT_IN_FINAL = 'Tu selección no llegó a la Gran Final: no podés jugarla.';
 const NO_FINAL = 'No hay una final en curso. Iniciá la Gran Final primero.';
 
 function active(): FinalSession {
@@ -20,6 +22,7 @@ export function startFinal(): FinalChatState {
   const s = store();
   const pairing = finalPairing();
   if (!pairing) throw conflict(NOT_SIMULATED);
+  if (!userInFinal()) throw conflict(getSimulation(CONFIG.defaultLang).message ?? NOT_IN_FINAL);
 
   clearFinal(s.tournament); // una final nueva reemplaza al resultado anterior
   const cfg = (id: string) => ({ ...teamConfig(id) });

@@ -46,7 +46,7 @@ export default function SimulatePage() {
     try {
       const res = await api.runSimulation(lang);
       setSimulation(res);
-      setSuccessMsg('¡Simulación completada con éxito! La Gran Final está lista.');
+      setSuccessMsg(res.message || '¡Simulación completada con éxito!');
       triggerRefresh();
     } catch (err: any) {
       setError(err.message || 'No se pudo ejecutar la simulación del Mundial.');
@@ -113,7 +113,7 @@ export default function SimulatePage() {
           )}
         </div>
 
-        {successMsg && (
+        {(successMsg || (simulation && simulation.status !== 'PENDING' && simulation.message)) && (
           <div
             style={{
               padding: '12px 18px',
@@ -125,7 +125,7 @@ export default function SimulatePage() {
               marginBottom: '20px',
             }}
           >
-            {successMsg}
+            {successMsg || simulation?.message}
           </div>
         )}
 

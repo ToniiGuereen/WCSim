@@ -1,4 +1,4 @@
-import { CoachingData, Player, RivalItem, TeamHistoryData } from '@/types';
+import { CoachingData, Player, RivalItem, TeamHistoryData, TeamSelectionData } from '@/types';
 import { CONFIG } from '../config';
 import { Lang } from '../domain';
 import { TEAMS, mustTeam, teamName } from '../data/catalog';
@@ -8,7 +8,8 @@ import { FORMATIONS, STRATEGIES } from '../data/tactics';
 import { coachProfileOf } from '../engine/final';
 import { pickLineup, toLive } from '../engine/lines';
 import { hashString } from '../rng';
-import { store, teamConfig } from '../engine/state';
+import { LEGENDS } from '../data/legends';
+import { chooseTeam, store, teamConfig } from '../engine/state';
 
 export function adminConfig() {
   return { teamId: store().myTeamId, lang: CONFIG.defaultLang };
@@ -112,4 +113,27 @@ export function getRivals(teamId: string, lang: Lang): RivalItem[] {
         formation: cfg.formation, strategyLabel: STYLE_LABEL[cfg.strategy][lang],
       };
     });
+}
+
+/** Las 10 selecciones elegibles al inicio de la campaña. */
+export function getTeamSelection(lang: Lang): TeamSelectionData {
+  const myTeamId = store().myTeamId;
+  return {
+    myTeamId,
+    teams: LEGENDS.map((l) => {
+      const t = mustTeam(l.id);
+      const cfg = teamConfig(l.id);
+      return {
+        id: t.id, teamId: t.id, rank: l.rank, name: teamName(t, lang), flag: t.flag, confederation: t.confederation,
+        overallRating: t.rating, worldCupTitles: l.titles, worldCupFinals: l.finals, tagline: l.tagline[lang],
+        coachName: t.coach, formation: cfg.formation, strategy: cfg.strategy, selected: t.id === myTeamId,
+      };
+    }),
+  };
+}
+
+/** Elige la selección. Cambiar de selección reinicia la campaña (torneo nuevo sin simular). */
+export function selectMyTeam(teamId: string, lang: Lang): TeamSelectionData {
+  chooseTeam(teamId);
+  return getTeamSelection(lang);
 }

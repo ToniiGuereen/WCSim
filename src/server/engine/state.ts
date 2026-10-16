@@ -47,8 +47,17 @@ export function teamConfig(teamId: string): TeamConfig {
   return s.teamConfig[teamId];
 }
 
-export function selectTeam(teamId: string): void {
-  store().myTeamId = teamId;
+/**
+ * Elige la selección del usuario. Si cambia, arranca una campaña nueva:
+ * sorteo nuevo sin simular y Final en curso descartada (la campaña anterior era de otro equipo).
+ */
+export function chooseTeam(teamId: string): boolean {
+  const s = store();
+  if (s.myTeamId === teamId) return false;
+  s.myTeamId = teamId;
+  s.tournament = createDraw(CONFIG.fixedSeed ?? randomSeed());
+  s.finalSession = undefined;
+  return true;
 }
 
 export function tournamentStatus(): TournamentStatus {

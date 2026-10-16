@@ -11,7 +11,8 @@ import {
   HistoricalWorldCupItem,
   FinalChatState,
   LiveEventItem,
-  TeamStateData
+  TeamStateData,
+  TeamSelectionData
 } from '../types';
 
 const API_BASE = '/api';
@@ -46,6 +47,17 @@ export const api = {
   },
 
   // My Team
+  async getTeamSelection(lang = 'es'): Promise<TeamSelectionData> {
+    return fetchJson<TeamSelectionData>(`${API_BASE}/my-team/select?lang=${lang}`);
+  },
+
+  async selectTeam(teamId: string, lang = 'es'): Promise<TeamSelectionData> {
+    return fetchJson<TeamSelectionData>(`${API_BASE}/my-team/select`, {
+      method: 'POST',
+      body: JSON.stringify({ teamId, lang }),
+    });
+  },
+
   async getPlayers(teamId = 'arg', lang = 'es'): Promise<Player[]> {
     return fetchJson<Player[]>(`${API_BASE}/my-team/players?teamId=${teamId}&lang=${lang}`);
   },

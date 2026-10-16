@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { TEAM_PRESETS } from '@/services/mockData';
+import { api } from '@/services/api';
 
 interface AppContextValue {
   teamId: string;
@@ -27,11 +28,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Load persisted state or defaults
-    const savedTeam = localStorage.getItem('wc_teamId') || 'arg';
+    const stored = localStorage.getItem('wc_teamId');
+    const savedTeam = stored || 'arg';
+    if (!stored) setIsAdminOpen(true); // primera visita: elegir selección
     const savedLang = (localStorage.getItem('wc_lang') as 'es' | 'en') || 'es';
     setTeamIdState(savedTeam.toLowerCase());
     setLangState(savedLang);
     applyTeamPalette(savedTeam.toLowerCase());
+    // El servidor recuerda la selección en memoria: la sincronizamos con la guardada en el navegador.
+    if (stored) api.selectTeam(savedTeam.toLowerCase(), savedLang).then(() => setRefreshKey((k) => k + 1)).catch(() => { localStorage.removeItem('wc_teamId'); setIsAdminOpen(true); });
   }, []);
 
   const applyTeamPalette = (id: string) => {
@@ -50,7 +55,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setTeamIdState(normalized);
     localStorage.setItem('wc_teamId', normalized);
     applyTeamPalette(normalized);
-    setRefreshKey((k) => k + 1);
+    api.selectTeam(normalized, lang).catch(() => {}).finally(() => setRefreshKey((k) => k + 1));
   };
 
   const setLang = (l: 'es' | 'en') => {

@@ -173,7 +173,7 @@ export function buildStatsAwards(t: Tournament, lang: Lang): StatsAwardsData {
     .map(([id, v]) => ({ id, rate: (v.yellow + v.red * 3) / v.played, played: v.played }))
     .sort((a, b) => a.rate - b.rate || b.played - a.played || a.id.localeCompare(b.id))[0];
   if (fair) {
-    awards.push({ icon: '\u{1F54A}️', title: tr.fair, winnerName: nameOf(fair.id), teamName: nameOf(fair.id), reason: tr.fairWhy });
+    awards.push({ icon: '\u{1F91D}', title: tr.fair, winnerName: nameOf(fair.id), teamName: nameOf(fair.id), reason: tr.fairWhy });
   }
 
   return {

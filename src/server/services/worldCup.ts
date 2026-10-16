@@ -3,7 +3,7 @@ import { CONFIG } from '../config';
 import { Lang, MatchRecord, StageCode, Tournament } from '../domain';
 import { TEAMS, findTeam, mustTeam, teamName } from '../data/catalog';
 import { PAST_EDITIONS } from '../data/history';
-import { createDraw, groupStandings, simulateTournament } from '../engine/tournament';
+import { autoPlayFinal, createDraw, groupStandings, simulateTournament } from '../engine/tournament';
 import { buildStatsAwards, computeStats } from '../engine/stats';
 import { store, teamConfig, tournamentStatus } from '../engine/state';
 import { randomSeed } from '../rng';
@@ -220,6 +220,29 @@ export function finalPairing(): { userId: string; oppId: string } | null {
   return { userId: a, oppId: b };
 }
 
+/** ¿La selección del usuario juega la Gran Final? Solo entonces puede jugarla por turnos. */
+export function userInFinal(): boolean {
+  const { tournament: t, myTeamId } = store();
+  return !!t.simulated && !!t.finalists?.includes(myTeamId);
+}
+
+type Outcome = NonNullable<SimulationData['userOutcome']>;
+
+/** Fase en la que terminó la campaña del usuario. */
+export function userCampaign(lang: Lang): { outcome: Outcome; stage?: StageCode; stageLabel?: string } {
+  const { tournament: t, myTeamId } = store();
+  if (!t.simulated) return { outcome: 'PENDING' };
+  if (t.championId === myTeamId) return { outcome: 'CHAMPION' };
+  if (t.runnerUpId === myTeamId) return { outcome: 'RUNNER_UP' };
+  if (t.finalists?.includes(myTeamId)) return { outcome: 'IN_FINAL' };
+  if (t.thirdId === myTeamId) return { outcome: 'THIRD' };
+  if (t.fourthId === myTeamId) return { outcome: 'FOURTH' };
+  const last = [...t.matches].reverse().find((m) => m.homeId === myTeamId || m.awayId === myTeamId);
+  // Un perdedor de semifinal juega el tercer puesto: si llegó acá y no figura 3º/4º, cayó antes.
+  const stage = last?.stage === 'THIRD_PLACE' ? 'SEMI_FINALS' : last?.stage ?? 'GROUPS';
+  return { outcome: 'ELIMINATED', stage, stageLabel: stageLabel(lang, stage) };
+}
+
 function finalist(teamId: string, lang: Lang): FinalistTeam {
   const team = mustTeam(teamId);
   const cfg = teamConfig(teamId);
@@ -235,25 +258,63 @@ const TBD = (lang: Lang): FinalistTeam => ({
   strategy: '—',
 });
 
+function campaignMessage(lang: Lang): string {
+  const es = lang === 'es';
+  const { tournament: t, myTeamId } = store();
+  const me = teamName(mustTeam(myTeamId), lang);
+  const { outcome, stageLabel: stg } = userCampaign(lang);
+  const champ = t.championId ? teamName(mustTeam(t.championId), lang) : '';
+  switch (outcome) {
+    case 'PENDING':
+      return es ? `Simulá el Mundial para empezar la campaña de ${me}.` : `Simulate the World Cup to start ${me}'s campaign.`;
+    case 'IN_FINAL':
+      return es ? `¡${me} llegó a la Gran Final! Ahora la jugás vos.` : `${me} reached the Grand Final! Now you play it.`;
+    case 'CHAMPION':
+      return es ? `¡${me} es CAMPEÓN DEL MUNDO!` : `${me} are WORLD CHAMPIONS!`;
+    case 'RUNNER_UP':
+      return es ? `${me} perdió la Gran Final. Campeón: ${champ}.` : `${me} lost the Grand Final. Champion: ${champ}.`;
+    case 'THIRD':
+      return es ? `${me} quedó eliminado en semifinales y ganó el tercer puesto. La final la jugaron otros: campeón ${champ}.` : `${me} went out in the semi-finals and won third place. Champion: ${champ}.`;
+    case 'FOURTH':
+      return es ? `${me} quedó cuarto. La final la jugaron otros: campeón ${champ}.` : `${me} finished fourth. Champion: ${champ}.`;
+    default:
+      return es
+        ? `${me} quedó eliminado en: ${stg}. No podés jugar la Gran Final porque tu selección no llegó; la final se simuló sola (campeón: ${champ}).`
+        : `${me} were eliminated in: ${stg}. You can't play the Grand Final because your team didn't reach it; it was auto-simulated (champion: ${champ}).`;
+  }
+}
+
 export function getSimulation(lang: Lang): SimulationData {
   const pairing = finalPairing();
   const status = tournamentStatus();
+  const { tournament: t, myTeamId } = store();
+  const camp = userCampaign(lang);
   return {
     edition: CONFIG.edition,
     status,
     stadium: CONFIG.stadium,
     city: CONFIG.city,
-    finalHomeTeam: pairing ? finalist(pairing.userId, lang) : finalist(store().myTeamId, lang),
+    finalHomeTeam: pairing ? finalist(pairing.userId, lang) : finalist(myTeamId, lang),
     finalAwayTeam: pairing ? finalist(pairing.oppId, lang) : TBD(lang),
+    myTeamId,
+    userInFinal: userInFinal(),
+    userOutcome: camp.outcome,
+    userEliminatedStage: camp.stageLabel,
+    message: campaignMessage(lang),
+    champion: t.championId ? finalist(t.championId, lang) : undefined,
   };
 }
 
-/** Simula el torneo. Si ya estaba simulado, sortea un torneo nuevo (salvo que WC_SEED lo fije). */
+/**
+ * Simula el torneo. Si ya estaba simulado, sortea un torneo nuevo (salvo que WC_SEED lo fije).
+ * Si la selección del usuario no llega a la Final, la Final se juega sola.
+ */
 export function runSimulation(lang: Lang): SimulationData {
   const s = store();
   if (s.tournament.simulated) s.tournament = createDraw(CONFIG.fixedSeed ?? randomSeed());
   s.finalSession = undefined;
   simulateTournament(s.tournament, (id) => teamConfig(id));
+  if (!userInFinal()) autoPlayFinal(s.tournament, (id) => teamConfig(id));
   return getSimulation(lang);
 }
 

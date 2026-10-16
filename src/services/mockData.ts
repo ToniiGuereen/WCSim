@@ -16,12 +16,15 @@ import {
 
 export const TEAM_PRESETS: Record<string, { name: string; flag: string; primary: string; secondary: string; accent: string; dark: string }> = {
   arg: { name: 'Argentina', flag: '🇦🇷', primary: '#75AADB', secondary: '#FFFFFF', accent: '#FFB81C', dark: '#060c18' },
-  bra: { name: 'Brasil', flag: '🇧🇷', primary: '#009C3B', secondary: '#FEDD00', accent: '#002776', dark: '#001A0D' },
-  uru: { name: 'Uruguay', flag: '🇺🇾', primary: '#5B9BD5', secondary: '#FFFFFF', accent: '#1A3A6B', dark: '#0A1628' },
+  bra: { name: 'Brasil', flag: '🇧🇷', primary: '#009C3B', secondary: '#FEDD00', accent: '#FEDD00', dark: '#001A0D' },
+  uru: { name: 'Uruguay', flag: '🇺🇾', primary: '#5B9BD5', secondary: '#FFFFFF', accent: '#7FB2E5', dark: '#0A1628' },
   esp: { name: 'España', flag: '🇪🇸', primary: '#AA151B', secondary: '#F1BF00', accent: '#F1BF00', dark: '#2A0004' },
   fra: { name: 'Francia', flag: '🇫🇷', primary: '#002395', secondary: '#FFFFFF', accent: '#ED2939', dark: '#000A30' },
   ger: { name: 'Alemania', flag: '🇩🇪', primary: '#2A2A2A', secondary: '#FFFFFF', accent: '#DD0000', dark: '#111111' },
-  eng: { name: 'Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', primary: '#CF081F', secondary: '#FFFFFF', accent: '#00247D', dark: '#2A0005' },
+  ita: { name: 'Italia', flag: '🇮🇹', primary: '#0066CC', secondary: '#FFFFFF', accent: '#4CC38A', dark: '#00152E' },
+  ned: { name: 'Países Bajos', flag: '🇳🇱', primary: '#F36C21', secondary: '#FFFFFF', accent: '#FFB27A', dark: '#2A1200' },
+  por: { name: 'Portugal', flag: '🇵🇹', primary: '#C8102E', secondary: '#006600', accent: '#FFCC00', dark: '#240008' },
+  eng: { name: 'Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', primary: '#CF081F', secondary: '#FFFFFF', accent: '#E6E9F0', dark: '#2A0005' },
 };
 
 export const MOCK_SQUAD: Player[] = [

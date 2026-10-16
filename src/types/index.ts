@@ -152,6 +152,39 @@ export interface SimulationData {
   city: string;
   finalHomeTeam: FinalistTeam;
   finalAwayTeam: FinalistTeam;
+  /** Selección elegida por el usuario. */
+  myTeamId?: string;
+  /** true solo si la selección del usuario está en la Gran Final (y por lo tanto puede jugarla). */
+  userInFinal?: boolean;
+  /** Dónde terminó la campaña del usuario. */
+  userOutcome?: 'PENDING' | 'IN_FINAL' | 'CHAMPION' | 'RUNNER_UP' | 'THIRD' | 'FOURTH' | 'ELIMINATED';
+  /** Fase en la que quedó eliminado (si corresponde). */
+  userEliminatedStage?: string;
+  /** Resumen legible del resultado de la campaña. */
+  message?: string;
+  champion?: FinalistTeam;
+}
+
+export interface SelectableTeam {
+  id: string;
+  teamId: string;
+  rank: number;
+  name: string;
+  flag: string;
+  confederation: string;
+  overallRating: number;
+  worldCupTitles: number;
+  worldCupFinals: number;
+  tagline: string;
+  coachName: string;
+  formation: string;
+  strategy: string;
+  selected: boolean;
+}
+
+export interface TeamSelectionData {
+  myTeamId: string;
+  teams: SelectableTeam[];
 }
 
 export interface TopScorerItem {

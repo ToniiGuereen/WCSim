@@ -1,5 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
+/* Banderas: Windows no dibuja emojis de bandera (muestra "AR", "BR"...). Esta fuente (Twemoji, CC-BY 4.0) los dibuja en todos los sistemas. */
+@font-face {
+  font-family: 'Twemoji Country Flags';
+  unicode-range: U+1F1E6-1F1FF, U+1F3F4, U+E0062-E0063, U+E0065, U+E0067, U+E006C, U+E006E, U+E0073-E0074, U+E0077, U+E007F;
+  src: url('/fonts/TwemojiCountryFlags.woff2') format('woff2');
+  font-display: swap;
+}
+
 :root {
   /* Official palette - default Argentina */
   --team-primary: #75AADB;
@@ -59,7 +67,7 @@
 html, body {
   height: 100vh;
   overflow: hidden;
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-family: 'Twemoji Country Flags', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   color: var(--text-primary);
   background:
     radial-gradient(ellipse 90% 60% at 50% -10%, rgba(117, 170, 219, 0.22) 0%, transparent 65%),

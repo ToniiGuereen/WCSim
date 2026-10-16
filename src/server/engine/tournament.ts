@@ -202,3 +202,19 @@ export function clearFinal(t: Tournament): void {
   t.championId = undefined;
   t.runnerUpId = undefined;
 }
+
+/**
+ * Juega la Final de forma automática (el usuario no está en ella: la ve como espectador).
+ * No hace nada si no hay finalistas o si la Final ya está registrada.
+ */
+export function autoPlayFinal(t: Tournament, configOf: ConfigOf): void {
+  if (!t.simulated || !t.finalists || t.championId) return;
+  const [home, away] = t.finalists;
+  const rng = createRng((t.seed ^ 0x5f3759df) >>> 0);
+  const c = (id: string) => {
+    const cfg = configOf(id);
+    return buildCtx(id, cfg.formation, cfg.strategy);
+  };
+  const number = Math.max(0, ...t.matches.map((m) => m.number)) + 1;
+  recordFinal(t, simulateMatch(rng, c(home), c(away), { number, stage: 'FINAL', knockout: true }));
+}

@@ -119,33 +119,88 @@ async function main() {
   await post('/api/my-team/coaching/strategy', { strategy: 'EQUILIBRADO' });
   await post('/api/my-team/coaching/formation', { formation: '4-3-3' });
 
-  // ── simulación completa, varias veces
+  // ── selección de selección (top 10 históricas)
+  const LEGENDS = ['bra', 'ger', 'ita', 'arg', 'fra', 'uru', 'esp', 'eng', 'ned', 'por'];
+  const sel = await get('/api/my-team/select?lang=es');
+  check(sel.status === 200 && sel.data.teams.length === 10 && sel.data.teams.map((t) => t.teamId).join() === LEGENDS.join(), 'select: 10 selecciones históricas en orden');
+  check(sel.data.teams.every((t) => t.name && t.flag && t.tagline && t.rank >= 1), 'select: datos completos');
+  check(sel.data.teams.filter((t) => t.selected).length === 1, 'select: exactamente 1 seleccionada');
+  await expectStatus('select: equipo fuera del top 10', '/api/my-team/select', 400, 'POST', { teamId: 'nzl' });
+  await expectStatus('select: equipo inexistente', '/api/my-team/select', 404, 'POST', { teamId: 'zzz' });
+  await expectStatus('select: sin teamId', '/api/my-team/select', 400, 'POST', {});
+  const pick = await post('/api/my-team/select', { teamId: 'BRA', lang: 'en' });
+  check(pick.status === 200 && pick.data.myTeamId === 'bra' && pick.data.teams.find((t) => t.selected).teamId === 'bra', 'select: elegir Brasil');
+  check((await get('/api/admin/config')).data.teamId === 'bra', 'select: admin/config refleja la selección');
+  check((await get('/api/world-cup/current?lang=es')).data.status === 'PENDING', 'select: cambiar de selección deja el torneo sin simular');
+
+  // ── simulación completa, varias veces (hasta ver varias finales jugadas y varias como espectador)
   const RUNS = Number(process.env.RUNS || 12);
   const champions = new Set();
-  for (let run = 1; run <= RUNS; run++) {
+  let finalsPlayed = 0;
+  let spectated = 0;
+  const outcomes = new Set();
+  for (let run = 1; run <= 600 && (finalsPlayed < RUNS || spectated < RUNS); run++) {
+    const me = LEGENDS[run % LEGENDS.length];
+    await post('/api/my-team/select', { teamId: me });
     const sim = await post('/api/world-cup/simulate?lang=es');
-    check(sim.status === 200 && sim.data.status === 'READY_FOR_FINAL', `run ${run}: simulate READY_FOR_FINAL`);
+    const inFinal = sim.data.userInFinal === true;
+    check(sim.status === 200 && sim.data.myTeamId === me, `run ${run}: simulate con ${me}`);
+    check(inFinal === [sim.data.finalHomeTeam.teamId, sim.data.finalAwayTeam.teamId].includes(me), `run ${run}: userInFinal coherente con finalistas`);
+    check(sim.data.status === (inFinal ? 'READY_FOR_FINAL' : 'ENDED'), `run ${run}: estado ${sim.data.status} (userInFinal=${inFinal})`);
+    check(typeof sim.data.message === 'string' && sim.data.message.length > 10, `run ${run}: mensaje de campaña`);
+    outcomes.add(sim.data.userOutcome);
     const [groups, matches, stats] = await Promise.all([
       get('/api/world-cup/groups?lang=es'),
       get('/api/world-cup/matches?lang=es'),
       get('/api/world-cup/stats-awards?lang=es'),
     ]);
-    validateTournament(matches.data, groups.data, stats.data, `run ${run}`);
-    const hs = await get('/api/world-cup/history?lang=es');
-    check(hs.data.length === 2, `run ${run}: sin final, historial = solo ediciones pasadas`);
-    const jr = await get('/api/world-cup/journey?teamId=arg&lang=es');
+    validateTournament(matches.data, groups.data, stats.data, `run ${run}`, inFinal);
+    const jr = await get(`/api/world-cup/journey?teamId=${me}&lang=es`);
     check(jr.data.matchesPlayed >= 3 && jr.data.matches.length === jr.data.matchesPlayed, `run ${run}: journey`);
     const fh = sim.data.finalHomeTeam;
     const fa = sim.data.finalAwayTeam;
     check(fh.teamId && fa.teamId && fh.teamId !== fa.teamId, `run ${run}: finalistas válidos`);
-    check(['RESULT'].length === 1, 'noop');
 
-    // ── jugar la final
+    if (!inFinal) {
+      // ── espectador: la final se juega sola y NO se puede jugar
+      spectated++;
+      check(['ELIMINATED', 'THIRD', 'FOURTH'].includes(sim.data.userOutcome), `run ${run}: resultado de campaña sin final (${sim.data.userOutcome})`);
+      check(!!sim.data.champion && [fh.teamId, fa.teamId].includes(sim.data.champion.teamId), `run ${run}: campeón entre los finalistas`);
+      const st = await post('/api/final-match/start');
+      check(st.status === 409 && /no llegó|eliminado|cuarto|tercer/i.test(st.json?.message || ''), `run ${run}: start final => 409 explicativo (${st.status} ${st.json?.message})`);
+      await expectStatus(`run ${run}: play sin final`, '/api/final-match/play', 409, 'POST', { selectedOption: 1 });
+      await expectStatus(`run ${run}: team-state sin final`, '/api/final-match/team-state', 409);
+      const fin = (await get('/api/world-cup/matches?stage=FINAL&lang=es')).data;
+      check(fin.length === 1 && fin[0].winnerTeamName && ![fin[0].homeTeamId, fin[0].awayTeamId].includes(me), `run ${run}: final auto-jugada sin mi equipo`);
+      check((await get('/api/world-cup/matches?lang=es')).data.length === 104, `run ${run}: 104 partidos`);
+      const stats2 = await get('/api/world-cup/stats-awards?lang=es');
+      check(stats2.data.totalMatches === 104 && stats2.data.podium.length === 3 && stats2.data.podium[0].teamName === fin[0].winnerTeamName, `run ${run}: podio == ganador de la final auto-jugada`);
+      const hs = await get('/api/world-cup/history?lang=es');
+      check(hs.data.length === 3 && hs.data[0].champion.teamName === fin[0].winnerTeamName, `run ${run}: historial incluye 2026`);
+      if (sim.data.userOutcome === 'ELIMINATED') {
+        const last = jr.data.matches[jr.data.matches.length - 1];
+        check(/Eliminado|Eliminated/i.test(jr.data.stageReachedLabel), `run ${run}: journey marca eliminación`);
+        check(!!last, `run ${run}: journey con partidos`);
+      }
+      champions.add(fin[0].winnerTeamName);
+      // cambiar de selección después de simular reinicia
+      if (spectated === 1) {
+        await post('/api/my-team/select', { teamId: me === 'bra' ? 'ger' : 'bra' });
+        check((await get('/api/world-cup/current?lang=es')).data.status === 'PENDING', 'cambio de selección post-simulación reinicia torneo');
+        check((await get('/api/world-cup/matches?lang=es')).data.length === 0, 'cambio de selección: sin partidos');
+      }
+      continue;
+    }
+
+    // ── mi selección llegó: se juega la Gran Final por turnos
+    finalsPlayed++;
+    const hs0 = await get('/api/world-cup/history?lang=es');
+    check(hs0.data.length === 2, `run ${run}: sin final, historial = solo ediciones pasadas`);
     const start = await post('/api/final-match/start');
     check(start.status === 200 && start.data.options.length === 4 && start.data.isFinished === false, `run ${run}: start final`);
     const ts0 = await get('/api/final-match/team-state');
     check(ts0.status === 200 && ts0.data.team.onField.length === 11 && ts0.data.opponent.onField.length === 11, `run ${run}: 11 vs 11`);
-    if (run === 1) {
+    if (finalsPlayed === 1) {
       const st = await post('/api/final-match/strategy', { strategy: 'DEFENSIVO' });
       check(st.status === 200 && st.data.messageItems.some((m) => /DEFENSIVO/.test(m.text)), 'cambio de estrategia en la final');
       const fo = await post('/api/final-match/formation', { formation: '3-5-2' });
@@ -171,9 +226,10 @@ async function main() {
     await expectStatus('jugar tras terminar', '/api/final-match/play', 409, 'POST', { selectedOption: 1 });
 
     const after = await get('/api/world-cup/matches?stage=FINAL&lang=es');
-    check(after.data.length === 1 && !!after.data.length, `run ${run}: final registrada en el torneo`);
+    check(after.data.length === 1, `run ${run}: final registrada en el torneo`);
     const fin = after.data[0];
     check(!!fin.winnerTeamName && [fin.homeTeamId, fin.awayTeamId].includes(fh.teamId) && [fin.homeTeamId, fin.awayTeamId].includes(fa.teamId), `run ${run}: final entre los finalistas`);
+    check([fin.homeTeamId, fin.awayTeamId].includes(me), `run ${run}: mi selección jugó la final`);
     const nums = state.score.match(/(\d+) - (\d+)/);
     check(nums && Number(nums[1]) === fin.homeScore && Number(nums[2]) === fin.awayScore, `run ${run}: marcador del chat == partido registrado (${state.score} vs ${fin.homeScore}-${fin.awayScore})`);
     const goalsEvents = (await get('/api/final-match/eventos-geniales-api')).data.filter((e) => e.tipo === 'GOL').length;
@@ -188,10 +244,11 @@ async function main() {
     const hs2 = await get('/api/world-cup/history?lang=es');
     check(hs2.data.length === 3 && hs2.data[0].year === 2026 && hs2.data[0].champion.teamName === fin.winnerTeamName, `run ${run}: historial incluye Mundial 2026 con el campeón`);
     cur = await get('/api/world-cup/current?lang=es');
-    check(cur.data.status === 'ENDED', `run ${run}: estado ENDED (fue ${cur.data.status})`);
+    check(cur.data.status === 'ENDED' && ['CHAMPION', 'RUNNER_UP'].includes(cur.data.userOutcome), `run ${run}: estado ENDED y resultado ${cur.data.userOutcome}`);
+    outcomes.add(cur.data.userOutcome);
 
     // reiniciar la final no duplica el partido
-    if (run === 2) {
+    if (finalsPlayed === 2) {
       const again = await post('/api/final-match/start');
       check(again.status === 200 && !again.data.isFinished, 'reiniciar final');
       check((await get('/api/world-cup/matches?stage=FINAL&lang=es')).data.length === 0, 'al reiniciar se limpia la final previa');
@@ -199,6 +256,8 @@ async function main() {
       check(cur.data.status === 'FINAL_ACTIVE', 'estado FINAL_ACTIVE');
     }
   }
+  check(finalsPlayed >= RUNS && spectated >= RUNS, `cobertura: ${finalsPlayed} finales jugadas, ${spectated} como espectador`);
+  console.log(`Finales jugadas: ${finalsPlayed} | como espectador: ${spectated} | resultados: ${[...outcomes].join(', ')}`);
   check(champions.size >= 2, `varios campeones distintos en ${RUNS} torneos (${[...champions].join(', ')})`);
 
   // ── idioma inglés

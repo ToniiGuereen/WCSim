@@ -1,27 +1,25 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import { TEAM_PRESETS } from '@/services/mockData';
-import { X, Check, Globe, Shield } from 'lucide-react';
+import { api } from '@/services/api';
+import { SelectableTeam } from '@/types';
+import { X, Globe, Shield } from 'lucide-react';
 
 export function AdminModal() {
   const { teamId, lang, isAdminOpen, closeAdmin, setTeam, setLang } = useApp();
-  const [customInput, setCustomInput] = useState(teamId);
+  const [teams, setTeams] = useState<SelectableTeam[]>([]);
+
+  useEffect(() => {
+    if (!isAdminOpen) return;
+    api.getTeamSelection(lang).then((d) => setTeams(d.teams)).catch(() => setTeams([]));
+  }, [isAdminOpen, lang, teamId]);
 
   if (!isAdminOpen) return null;
 
   const handleSelectPreset = (id: string) => {
-    setCustomInput(id);
     setTeam(id);
-  };
-
-  const handleSaveCustom = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (customInput.trim()) {
-      setTeam(customInput.trim().toLowerCase());
-      closeAdmin();
-    }
+    closeAdmin();
   };
 
   return (
@@ -30,7 +28,7 @@ export function AdminModal() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Shield size={20} color="var(--team-primary)" />
-            Configuración de Selección
+            Elegí tu selección
           </h2>
           <button
             type="button"
@@ -43,25 +41,24 @@ export function AdminModal() {
         </div>
 
         <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-          Seleccioná tu equipo asignado para personalizar los colores del sistema, el escudo y los datos de las vistas:
+          Elegí una de las 10 mejores selecciones de la historia. Solo vas a poder jugar la Gran Final si tu selección llega hasta ahí. Cambiar de selección reinicia el torneo.
         </p>
 
-        {/* Preset teams */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '22px' }}>
-          {Object.entries(TEAM_PRESETS).map(([id, info]) => {
-            const isSelected = teamId === id;
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '22px' }}>
+          {teams.map((t) => {
+            const isSelected = teamId === t.id;
             return (
               <button
-                key={id}
+                key={t.id}
                 type="button"
-                onClick={() => handleSelectPreset(id)}
+                onClick={() => handleSelectPreset(t.id)}
                 style={{
                   display: 'flex',
-                  flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '6px',
-                  padding: '12px 8px',
+                  gap: '10px',
+                  padding: '10px 12px',
                   borderRadius: '10px',
+                  textAlign: 'left',
                   border: isSelected ? '2px solid var(--team-primary)' : '1px solid var(--border-color)',
                   background: isSelected ? 'rgba(117, 170, 219, 0.2)' : 'rgba(13, 24, 44, 0.6)',
                   cursor: 'pointer',
@@ -69,34 +66,17 @@ export function AdminModal() {
                   color: '#fff',
                 }}
               >
-                <span style={{ fontSize: '26px' }}>{info.flag}</span>
-                <span style={{ fontSize: '12px', fontWeight: 700 }}>{info.name}</span>
-                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{id.toUpperCase()}</span>
+                <span style={{ fontSize: '28px' }}>{t.flag}</span>
+                <span style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 800 }}>#{t.rank} {t.name}</span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                    {t.worldCupTitles} {t.worldCupTitles === 1 ? 'título' : 'títulos'} · Rating {t.overallRating}
+                  </span>
+                </span>
               </button>
             );
           })}
         </div>
-
-        {/* Custom Team ID Form */}
-        <form onSubmit={handleSaveCustom} style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>
-            O ingresar ID de equipo personalizado:
-          </label>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <input
-              type="text"
-              className="form-control"
-              style={{ flex: 1 }}
-              placeholder="ej: arg, bra, ita, usa..."
-              value={customInput}
-              onChange={(e) => setCustomInput(e.target.value)}
-            />
-            <button type="submit" className="btn btn-primary">
-              <Check size={16} />
-              Aplicar
-            </button>
-          </div>
-        </form>
 
         {/* Language selector */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(117, 170, 219, 0.08)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
