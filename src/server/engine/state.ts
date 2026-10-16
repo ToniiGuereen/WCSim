@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import { CONFIG } from '../config';
 import { Tournament } from '../domain';
 import { findTeam, mustTeam } from '../data/catalog';
@@ -21,22 +22,72 @@ export interface Store {
 export type TournamentStatus = 'PENDING' | 'READY_FOR_FINAL' | 'FINAL_ACTIVE' | 'ENDED';
 
 /**
- * Estado en memoria del proceso. Va en globalThis porque en `next dev` cada route handler
- * puede cargarse en un bundle distinto y un singleton de módulo no se compartiría.
- * App de un solo usuario: el estado es global al servidor.
+ * Estado en memoria, UNO POR VISITANTE. El middleware asigna una cookie `wc_sid` y la reenvía
+ * como header `x-wc-sid`; acá se usa como clave. Va en globalThis porque en `next dev` cada
+ * route handler puede cargarse en un bundle distinto y un Map de módulo no se compartiría.
+ * Las sesiones inactivas vencen (WC_SESSION_TTL_MIN) y hay un tope (WC_MAX_SESSIONS, se descarta la menos usada).
  */
-const g = globalThis as unknown as { __wcStore?: Store };
+interface Entry {
+  store: Store;
+  lastUsed: number;
+}
+const g = globalThis as unknown as { __wcSessions?: Map<string, Entry>; __wcSweptAt?: number };
+const sessions = (): Map<string, Entry> => (g.__wcSessions ??= new Map());
+
+function currentSid(): string {
+  try {
+    return headers().get('x-wc-sid') || 'anon';
+  } catch {
+    return 'anon'; // fuera de un request (scripts, tests unitarios)
+  }
+}
+
+function newStore(): Store {
+  return {
+    myTeamId: findTeam(CONFIG.defaultTeamId)?.id ?? 'arg',
+    teamConfig: {},
+    tournament: createDraw(CONFIG.fixedSeed ?? randomSeed()),
+  };
+}
+
+function evict(now: number): void {
+  const map = sessions();
+  const ttl = CONFIG.sessionTtlMs;
+  // Barrido de vencidas como mucho una vez por minuto
+  if (now - (g.__wcSweptAt ?? 0) > 60_000) {
+    g.__wcSweptAt = now;
+    for (const [id, e] of map) if (now - e.lastUsed > ttl) map.delete(id);
+  }
+  // Tope: descarta las menos usadas
+  while (map.size >= CONFIG.maxSessions) {
+    let oldest: string | undefined;
+    let t = Infinity;
+    for (const [id, e] of map) if (e.lastUsed < t) { t = e.lastUsed; oldest = id; }
+    if (oldest === undefined) break;
+    map.delete(oldest);
+  }
+}
 
 export function store(): Store {
-  if (!g.__wcStore) {
-    g.__wcStore = {
-      myTeamId: findTeam(CONFIG.defaultTeamId)?.id ?? 'arg',
-      teamConfig: {},
-      tournament: createDraw(CONFIG.fixedSeed ?? randomSeed()),
-    };
+  const sid = currentSid();
+  const map = sessions();
+  const now = Date.now();
+  let entry = map.get(sid);
+  if (entry && now - entry.lastUsed > CONFIG.sessionTtlMs) {
+    map.delete(sid);
+    entry = undefined;
   }
-  return g.__wcStore;
+  if (!entry) {
+    evict(now);
+    entry = { store: newStore(), lastUsed: now };
+    map.set(sid, entry);
+  }
+  entry.lastUsed = now;
+  return entry.store;
 }
+
+/** Cantidad de sesiones vivas (health check / monitoreo). */
+export const sessionCount = (): number => sessions().size;
 
 export function teamConfig(teamId: string): TeamConfig {
   const s = store();

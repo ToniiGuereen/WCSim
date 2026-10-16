@@ -5,12 +5,12 @@
 - **Bloqueante:** el estado del torneo está en memoria y es **global al servidor**. Con 2 personas a la vez, una pisa el torneo de la otra.
 - No se puede usar Vercel/Netlify (serverless): cada request puede caer en otra instancia y la memoria no se comparte. Hace falta un **proceso Node persistente**.
 
-## Fase 1 — Estado por visitante (bloqueante, ~2-3 h)
-1. `src/middleware.ts`: para `/api/*`, leer cookie `wc_sid`; si no existe, generar `crypto.randomUUID()`, setearla (`HttpOnly`, `SameSite=Lax`, `Secure` en prod, 30 días) y reenviarla como header `x-wc-sid`.
-2. `engine/state.ts`: reemplazar el singleton por `Map<sid, Store>`; `store()` obtiene el sid con `headers().get('x-wc-sid')` (`next/headers`).
-3. Limpieza: TTL de inactividad 2 h + tope de 500 sesiones (descartar la menos usada). Evita crecer sin límite.
-4. `scripts/e2e.mjs`: agregar cookie jar (guardar `set-cookie` y reenviar `cookie`) y un test con 2 sesiones paralelas que verifique que no se pisan.
-Criterio de listo: dos navegadores distintos eligen equipos distintos y simulan torneos distintos sin interferirse.
+## Fase 1 — Estado por visitante ✅ HECHA
+- `src/middleware.ts` asigna la cookie `wc_sid` (HttpOnly, SameSite=Lax, Secure bajo HTTPS, 30 días) y la pasa al backend como `x-wc-sid`. Un `x-wc-sid` mandado por el cliente se ignora.
+- `engine/state.ts` guarda un `Store` por sesión. Vencen a los 120 min de inactividad (`WC_SESSION_TTL_MIN`) y hay un tope de 500 (`WC_MAX_SESSIONS`, se descarta la menos usada).
+- `/api/health` informa la cantidad de sesiones vivas.
+- `scripts/e2e.mjs` usa cookie jar y prueba aislamiento entre visitantes, header forjado y cookie inválida.
+- Limitación: las sesiones viven en memoria; un reinicio o el sueño del plan gratis las borra (el frontend se resincroniza solo al recargar).
 
 ## Fase 2 — Endurecer (~1 h)
 - Rate limit por IP en el middleware (p. ej. 120 req/min, 429 si se pasa).
@@ -35,7 +35,7 @@ Siempre **1 sola instancia** (no escalar horizontalmente mientras el estado est�
 6. Cada `git push` a `main` redeploya solo.
 
 ## Fase 4 — Verificación antes de compartir
-1. `node scripts/e2e.mjs https://TU-APP.onrender.com` (con cookie jar de la Fase 1).
+1. `node scripts/e2e.mjs https://TU-APP.onrender.com` .
 2. Probar a mano desde celular y PC: elegir selección, simular, jugar la Final, ver que "Jugar la Final" solo aparece si tu selección llegó.
 3. Abrir dos navegadores a la vez (Fase 1 funcionando).
 4. Monitor gratuito (UptimeRobot) pegándole a `/api/health` cada 5 min: avisa si cae (y mantiene despierto el plan gratis).

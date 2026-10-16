@@ -20,6 +20,10 @@ export const CONFIG = {
   defaultLang: ((process.env.NEXT_PUBLIC_APP_LANG || 'es').toLowerCase() === 'en' ? 'en' : 'es') as 'es' | 'en',
   /** WC_SEED fija la semilla del torneo para reproducir simulaciones. */
   fixedSeed: process.env.WC_SEED && Number.isFinite(Number(process.env.WC_SEED)) ? Number(process.env.WC_SEED) >>> 0 : undefined,
+  /** Una sesión inactiva más de WC_SESSION_TTL_MIN minutos se descarta. */
+  sessionTtlMs: positive(process.env.WC_SESSION_TTL_MIN, 120) * 60_000,
+  /** Tope de sesiones simultáneas en memoria. */
+  maxSessions: Math.floor(positive(process.env.WC_MAX_SESSIONS, 500)),
   edition: 2026,
   stadium: 'MetLife Stadium',
   city: 'New York / New Jersey',

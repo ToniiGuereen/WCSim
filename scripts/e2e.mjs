@@ -8,14 +8,19 @@ const check = (cond, msg) => {
   else failures.push(msg);
 };
 
-async function call(method, path, body, raw) {
+// Cada "visitante" tiene su cookie jar: el backend guarda un torneo por sesión (cookie wc_sid).
+const mainJar = { cookie: '' };
+async function call(method, path, body, raw, jar = mainJar, extraHeaders = {}) {
   const res = await fetch(BASE + path, {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(jar.cookie ? { cookie: jar.cookie } : {}), ...extraHeaders },
     body: body === undefined ? undefined : raw ? body : JSON.stringify(body),
   });
+  const setCookie = res.headers.getSetCookie?.() ?? [];
+  const sid = setCookie.map((c) => c.split(';')[0]).find((c) => c.startsWith('wc_sid='));
+  if (sid) jar.cookie = sid;
   const json = await res.json().catch(() => null);
-  return { status: res.status, json, data: json && json.data !== undefined ? json.data : json };
+  return { status: res.status, json, headers: res.headers, setCookie, data: json && json.data !== undefined ? json.data : json };
 }
 const get = (p) => call('GET', p);
 const post = (p, b) => call('POST', p, b);
@@ -118,6 +123,47 @@ async function main() {
   check(pl442.data.filter((p) => p.isOnField && p.position === 'DF').length === 4 && pl442.data.filter((p) => p.isOnField && p.position === 'FW').length === 2, '4-4-2 refleja 4 DF y 2 FW titulares');
   await post('/api/my-team/coaching/strategy', { strategy: 'EQUILIBRADO' });
   await post('/api/my-team/coaching/formation', { formation: '4-3-3' });
+
+  // ── sesiones: cada visitante tiene su propio torneo
+  const freshJar = { cookie: '' };
+  const first = await call('GET', '/api/admin/config', undefined, false, freshJar);
+  check(first.setCookie.some((c) => /^wc_sid=[0-9a-f-]{36};/i.test(c) && /HttpOnly/i.test(c) && /SameSite=lax/i.test(c)), 'sesión: primer request recibe cookie wc_sid HttpOnly');
+  const sidA = mainJar.cookie;
+  const again = await get('/api/admin/config');
+  check(again.setCookie.length === 0 && mainJar.cookie === sidA, 'sesión: la cookie se reutiliza, no se regenera');
+  const jarB = { cookie: '' };
+  const jarC = { cookie: '' };
+  await call('POST', '/api/my-team/select', { teamId: 'bra' }, false, mainJar);
+  await call('POST', '/api/world-cup/simulate?lang=es', undefined, false, mainJar);
+  const bCfg = await call('GET', '/api/admin/config', undefined, false, jarB);
+  check(bCfg.data.teamId === 'arg' && jarB.cookie && jarB.cookie !== sidA, 'sesión: visitante B arranca con su propio estado (no ve la selección de A)');
+  check((await call('GET', '/api/world-cup/current?lang=es', undefined, false, jarB)).data.status === 'PENDING', 'sesión: B sin simular mientras A ya simuló');
+  await call('POST', '/api/my-team/select', { teamId: 'ger' }, false, jarB);
+  await call('POST', '/api/world-cup/simulate?lang=es', undefined, false, jarB);
+  const aCur = await call('GET', '/api/world-cup/current?lang=es', undefined, false, mainJar);
+  const bCur = await call('GET', '/api/world-cup/current?lang=es', undefined, false, jarB);
+  check(aCur.data.myTeamId === 'bra' && bCur.data.myTeamId === 'ger', 'sesión: A=bra y B=ger no se pisan');
+  const aM = (await call('GET', '/api/world-cup/matches?lang=es', undefined, false, mainJar)).data;
+  const bM = (await call('GET', '/api/world-cup/matches?lang=es', undefined, false, jarB)).data;
+  check(aM.length >= 103 && bM.length >= 103 && JSON.stringify(aM) !== JSON.stringify(bM), 'sesión: torneos distintos por visitante');
+  // Final de A no afecta a B
+  if (aCur.data.userInFinal) {
+    await call('POST', '/api/final-match/start', undefined, false, mainJar);
+    check((await call('GET', '/api/final-match/team-state', undefined, false, jarB)).status === (bCur.data.userInFinal ? 409 : 409), 'sesión: la final de A no existe en B');
+  }
+  // Header x-wc-sid forjado: se ignora
+  const forged = await call('GET', '/api/world-cup/current?lang=es', undefined, false, jarC, { 'x-wc-sid': sidA.split('=')[1] });
+  check(forged.data.status === 'PENDING' && jarC.cookie && jarC.cookie !== sidA, 'sesión: x-wc-sid forjado por el cliente se ignora');
+  // Cookie inválida se reemplaza
+  const jarD = { cookie: 'wc_sid=../../etc/passwd' };
+  const bad = await call('GET', '/api/admin/config', undefined, false, jarD);
+  check(bad.setCookie.some((c) => /^wc_sid=[0-9a-f-]{36};/i.test(c)), 'sesión: cookie malformada se reemplaza');
+  const health = await get('/api/health');
+  check(health.status === 200 && health.data.sessions >= 4, `sesión: health reporta sesiones (${health.data.sessions})`);
+  // dejar la sesión principal limpia para el resto de la prueba
+  await call('POST', '/api/my-team/select', { teamId: 'arg' }, false, mainJar);
+  await call('POST', '/api/my-team/select', { teamId: 'bra' }, false, mainJar);
+  await call('POST', '/api/my-team/select', { teamId: 'arg' }, false, mainJar);
 
   // ── selección de selección (top 10 históricas)
   const LEGENDS = ['bra', 'ger', 'ita', 'arg', 'fra', 'uru', 'esp', 'eng', 'ned', 'por'];
